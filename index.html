@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de dados</title>
+  
+  <link rel="icon" type="image/png" href="imagens/gestor.png">
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              900: '#0c4a6e',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Navbar HTML same as before... -->
+  <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center space-x-8">
+          <div class="flex items-center whitespace-nowrap">
+            <img src="imagens/gestor.png" alt="Gestor de dados" class="h-8 w-auto object-contain mr-2" onerror="this.style.display='none'">
+            <span class="font-bold text-xl text-gray-900 tracking-tight">Gestor de dados</span>
+          </div>
+          <div class="hidden md:flex space-x-1">
+            <button onclick="navigate('builder')" id="nav-builder" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"><i class="ph ph-wrench"></i> Construtor</button>
+            <button onclick="navigate('flow')" id="nav-flow" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"><i class="ph ph-git-branch"></i> Fluxo</button>
+            <button onclick="navigate('design')" id="nav-design" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"><i class="ph ph-palette"></i> Design</button>
+            <button onclick="navigate('leads')" id="nav-leads" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-gray-50 flex items-center gap-2 transition-colors tab-active"><i class="ph ph-users"></i> Leads</button>
+            <button onclick="navigate('integrate')" id="nav-integrate" class="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-brand-600 hover:bg-gray-50 flex items-center gap-2 transition-colors"><i class="ph ph-code"></i> Integrar HTML</button>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button onclick="openSettings()" class="text-gray-500 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100 transition" title="Configurações"><i class="ph ph-gear text-xl"></i></button>
+          <button onclick="window.open('quiz.html', '_blank')" class="text-gray-500 hover:text-gray-900 px-3 py-1.5 rounded-full hover:bg-gray-100 flex items-center gap-1 text-sm font-medium transition"><i class="ph ph-eye"></i> Visualizar</button>
+          <button onclick="publish()" class="btn-primary px-4 py-1.5 rounded-md flex items-center gap-1 text-sm font-medium shadow-sm"><i class="ph ph-rocket-launch"></i> Publicar</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <header class="bg-white shadow-sm border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2 text-gray-900">
+          Dashboard e gerenciamento do funil.
+        </h1>
+      </div>
+      <div>
+        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+          <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+          Online
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8" id="app-content">
+    <!-- View content -->
+  </main>
+
+  <div id="settings-modal" class="fixed inset-0 bg-black/50 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+        <h3 class="font-bold text-lg">Configurações do Funil</h3>
+        <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-700 p-1"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="p-6 overflow-y-auto space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">URL App Supabase</label>
+          <input type="text" id="set-supa-url" class="w-full border border-gray-300 rounded-md p-2 outline-none transition" placeholder="https://xyz.supabase.co">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Chave Anon Supabase</label>
+          <input type="text" id="set-supa-key" class="w-full border border-gray-300 rounded-md p-2 outline-none transition" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI...">
+        </div>
+      </div>
+      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+        <button onclick="closeSettings()" class="px-4 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+        <button onclick="saveSettings()" class="px-4 py-2 bg-brand-600 text-white rounded-md text-sm font-medium hover:bg-brand-700">Salvar Supabase</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config/supabase.js"></script>
+  <script src="services/tracking.js"></script>
+  <script src="services/leads.js"></script>
+  <script src="services/builder.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
