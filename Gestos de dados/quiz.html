@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Descubre tu perfil pastelero</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+        :root {
+            --primary: #f43f5e; /* Rose 500 */
+            --primary-hover: #e11d48;
+            --bg-color: #0f172a; /* Slate 900 */
+            --card-bg: #1e293b;
+        }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: #f8fafc;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .step-container {
+            display: none;
+            animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .step-container.active {
+            display: flex;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .btn-option {
+            background: var(--card-bg);
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .btn-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            background: rgba(244, 63, 94, 0.1);
+        }
+        .btn-option:active {
+            transform: scale(0.98);
+        }
+        .btn-main {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 4px 14px 0 rgba(244, 63, 94, 0.39);
+        }
+        .btn-main:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(244, 63, 94, 0.5);
+        }
+        .progress-bar-inner {
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        input[type="text"], input[type="email"], input[type="tel"] {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.2);
+            outline: none;
+        }
+    </style>
+</head>
+<body class="antialiased flex flex-col items-center justify-center py-6 px-4">
+
+    <div class="w-full max-w-md mx-auto">
+        <div id="progress-wrapper" class="mb-8 w-full hidden">
+            <div class="flex justify-between items-center mb-2 text-sm font-medium text-slate-400">
+                <span>Progreso</span>
+                <span id="progress-text">0%</span>
+            </div>
+            <div class="w-full bg-slate-800 rounded-full h-2.5">
+                <div id="progress-bar" class="bg-rose-500 rounded-full h-2.5 progress-bar-inner" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <div id="quiz-container" class="w-full bg-slate-800/50 backdrop-blur-md border border-slate-700/50 rounded-2xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
+            <div id="loading" class="flex flex-col items-center justify-center py-10">
+                <div class="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-slate-300">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Referência ao Supabase via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts locais -->
+    <script src="config/supabase.js"></script>
+    
+    <!-- Injeta tracker via script tag dinâmico para amarrar ao backend/supabase usando os dados do builder -->
+    <script>
+        const raw = localStorage.getItem('builder_funnel_data');
+        let fId = 'quiz_bolis_8f72a9';
+        if(raw) {
+            try { fId = JSON.parse(raw).id; }catch(e){}
+        }
+        const s = document.createElement('script');
+        s.src = 'tracker.js';
+        s.setAttribute('data-funnel-id', fId);
+        s.setAttribute('data-public-key', 'pk_live_default123'); // Fallback public key para testes
+        // Como no MVP HTML PURO não há API intermediário, setar o supabase URL aqui se existir
+        if (localStorage.getItem('SUPABASE_URL')) {
+            s.setAttribute('data-supabase-url', localStorage.getItem('SUPABASE_URL'));
+            s.setAttribute('data-supabase-key', localStorage.getItem('SUPABASE_ANON_KEY'));
+        }
+        document.body.appendChild(s);
+    </script>
+
+    <script src="quiz.js"></script>
+</body>
+</html>
