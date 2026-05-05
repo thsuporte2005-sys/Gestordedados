@@ -364,7 +364,11 @@ async function renderIntegrate() {
         }
     } catch(e) { console.warn('Erro ao carregar stats da integração', e); }
 
-    const tagSource = `<script \n  async\n  src="https://SEU-PROJETO.vercel.app/pixel.js"\n  data-funnel-id="${funnel_id}"\n  data-public-key="${public_key}"\n  data-endpoint="https://SEU-PROJETO.vercel.app/api/track">\n</script>`;
+    const baseUrl = window.location.origin && window.location.origin !== "null" && !window.location.origin.includes("file://") 
+        ? window.location.origin 
+        : "https://gestordedados.vercel.app";
+
+    const tagSource = `<script \n  async\n  src="${baseUrl}/pixel.js"\n  data-funnel-id="${funnel_id}"\n  data-public-key="${public_key}"\n  data-endpoint="${baseUrl}/api/track">\n</script>`;
 
     const statusBadgeHtml = isActive 
         ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Ativo</span>`
@@ -375,7 +379,7 @@ async function renderIntegrate() {
     // Para quem quiser usar o modo direto Supabase (avançado)
     const supabaseUrl = localStorage.getItem('SUPABASE_URL') || 'URL_AQUI';
     const supabaseKey = localStorage.getItem('SUPABASE_ANON_KEY') || 'KEY_AQUI';
-    const tagSourceSupa = `<script \n  async\n  src="https://SEU-PROJETO.vercel.app/pixel.js"\n  data-funnel-id="${funnel_id}"\n  data-public-key="${public_key}"\n  data-supabase-url="${supabaseUrl}"\n  data-supabase-key="${supabaseKey}">\n</script>`;
+    const tagSourceSupa = `<script \n  async\n  src="${baseUrl}/pixel.js"\n  data-funnel-id="${funnel_id}"\n  data-public-key="${public_key}"\n  data-supabase-url="${supabaseUrl}"\n  data-supabase-key="${supabaseKey}">\n</script>`;
 
     appContent.innerHTML = `
         <div class="fade-in max-w-5xl mx-auto space-y-6">
@@ -404,9 +408,9 @@ async function renderIntegrate() {
                     
                     <div class="bg-gray-50 p-3 rounded-lg border border-gray-100 mb-4 text-xs text-gray-600">
                         <strong class="text-gray-800 block mb-1">Diagnóstico Rápido:</strong>
-                        <div class="flex justify-between mt-1"><span>Pixel Script:</span> <span class="text-green-600 font-medium">OK (200)</span></div>
-                        <div class="flex justify-between mt-1"><span>Endpoint API:</span> <span class="text-green-600 font-medium">OK</span></div>
-                        <div class="flex justify-between mt-1"><span>Banco/Supabase:</span> <span class="${totalEventsToday > 0 ? 'text-green-600' : 'text-yellow-600'} font-medium">${totalEventsToday > 0 ? 'Conectado' : 'Aguardando dados'}</span></div>
+                        <div class="flex justify-between mt-1"><span>Pixel Script:</span> <span id="diag-px" class="text-gray-500 font-medium">Testando...</span></div>
+                        <div class="flex justify-between mt-1"><span>Endpoint API:</span> <span id="diag-api" class="text-gray-500 font-medium">Testando...</span></div>
+                        <div class="flex justify-between mt-1"><span>Banco/Supabase:</span> <span id="diag-db" class="${totalEventsToday > 0 ? 'text-green-600' : 'text-yellow-600'} font-medium">${totalEventsToday > 0 ? 'OK (Recebeu evento)' : 'Aguardando dados'}</span></div>
                     </div>
 
                     <div class="flex flex-col gap-2">
@@ -432,7 +436,7 @@ async function renderIntegrate() {
                     <div class="mt-6 border-t border-gray-100 pt-4">
                         <details class="group cursor-pointer">
                             <summary class="text-sm font-medium text-gray-700 select-none pb-2 hover:text-brand-600 transition">⚙️ Alternativa: Modo Direto Supabase</summary>
-                            <p class="text-xs text-gray-500 mb-3 ml-4 mt-2">Use se quiser pular o proxy do Netlify e gravar direto no Supabase.</p>
+                            <p class="text-xs text-gray-500 mb-3 ml-4 mt-2">Use se quiser pular o proxy da Vercel e gravar direto no Supabase.</p>
                             <div class="bg-gray-900 rounded-xl p-4 relative ml-4">
                                 <code class="text-xs text-brand-100 font-mono whitespace-pre-wrap">${tagSourceSupa.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code>
                                 <button onclick="copyInstallCode('supa')" class="absolute top-2 right-2 bg-white/10 hover:bg-white/20 text-white p-1.5 rounded-lg transition text-xs"><i class="ph ph-copy"></i></button>
@@ -524,13 +528,20 @@ async function renderIntegrate() {
         };
 
         try {
-            const req = await fetch('/api/track', {
+            const req = await fetch(`${baseUrl}/api/track`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            if (!req.ok) throw new Error('API Rejeitou');
+            if (!req.ok) {
+                let errDetails = '';
+                try {
+                    const j = await req.json();
+                    errDetails = (j.message || '') + (j.details ? ' - ' + j.details : '');
+                } catch(e) {}
+                throw new Error(`Status: ${req.status}. ${errDetails}`);
+            }
 
             window.showToast('✅ Integração funcionando corretamente. Evento de teste recebido.', 'success');
 
@@ -545,11 +556,35 @@ async function renderIntegrate() {
             if (statusBadgeEl) {
                 statusBadgeEl.innerHTML = `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Ativo</span>`;
             }
+            
+            const dbDiagEl = document.getElementById('diag-db');
+            if(dbDiagEl) dbDiagEl.innerHTML = '<span class="text-green-600 font-medium">OK (Salvo)</span>';
 
         } catch (e) {
-            window.showToast('❌ Não foi possível testar a integração. Verifique /api/track, Supabase e variáveis de ambiente.', 'error');
+            window.showToast(`❌ Não foi possível testar a integração. Verifique /api/track, Supabase e variáveis de ambiente da Vercel. Detalhes: ${e.message}`, 'error');
         }
     };
+
+    // Roda diagnóstico automático em background
+    setTimeout(async () => {
+        try {
+            const rPx = await fetch(baseUrl + '/pixel.js', { method: 'HEAD' });
+            const pxEl = document.getElementById('diag-px');
+            if(pxEl) pxEl.innerHTML = rPx.ok ? '<span class="text-green-600 font-medium">OK (200)</span>' : `<span class="text-red-600 font-medium">Erro (${rPx.status})</span>`;
+        } catch(e) {
+            const pxEl = document.getElementById('diag-px');
+            if(pxEl) pxEl.innerHTML = '<span class="text-red-600 font-medium">Falha na Rede</span>';
+        }
+        
+        try {
+            const rApi = await fetch(baseUrl + '/api/track', { method: 'OPTIONS' });
+            const apiEl = document.getElementById('diag-api');
+            if(apiEl) apiEl.innerHTML = rApi.ok ? '<span class="text-green-600 font-medium">OK</span>' : `<span class="text-red-600 font-medium">Erro 404/(${rApi.status})</span>`;
+        } catch(e) {
+            const apiEl = document.getElementById('diag-api');
+            if(apiEl) apiEl.innerHTML = '<span class="text-red-600 font-medium">Erro 404/Rede</span>';
+        }
+    }, 800);
 }
 
 function openSettings() {
