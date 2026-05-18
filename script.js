@@ -1,6 +1,6 @@
 // script.js - Lógica Principal do Dashboard Integrado ao Supabase
 
-let currentTab = 'leads';
+let currentTab = 'dashboard';
 let currentSubTab = 'respostas';
 let currentFilter = 'todos';
 const appContent = document.getElementById('app-content');
@@ -20,10 +20,31 @@ const defaultFunnel = [
 
 function navigate(tab) {
     currentTab = tab;
-    ['builder', 'flow', 'design', 'leads', 'integrate'].forEach(t => {
-        document.getElementById(`nav-${t}`).classList.remove('tab-active');
+    ['dashboard', 'builder', 'flow', 'design', 'leads', 'integrate'].forEach(t => {
+        const el = document.getElementById(`nav-${t}`);
+        if(el) {
+            el.classList.remove('bg-emerald-50', 'text-[#10b981]');
+            el.classList.add('text-gray-600');
+        }
     });
-    document.getElementById(`nav-${tab}`).classList.add('tab-active');
+    const activeEl = document.getElementById(`nav-${tab}`);
+    if(activeEl) {
+        activeEl.classList.remove('text-gray-600');
+        activeEl.classList.add('bg-emerald-50', 'text-[#10b981]');
+    }
+
+    const titleMap = {
+        'dashboard': 'Dashboard Inteligente',
+        'leads': 'Analytics Estratégico',
+        'builder': 'Projetos & Funis',
+        'flow': 'Automação Visual',
+        'design': 'Campanhas',
+        'integrate': 'Integração Universal'
+    };
+    if(document.getElementById('header-title')) {
+        document.getElementById('header-title').innerText = titleMap[tab] || 'SaaS';
+    }
+
     render();
 }
 
@@ -33,6 +54,7 @@ function navigateSub(subtab) {
 }
 
 async function render() {
+    if (currentTab === 'dashboard') await renderDashboard();
     if (currentTab === 'leads') await renderLeads();
     if (currentTab === 'builder') renderBuilder();
     if (currentTab === 'flow') renderFlow();
@@ -40,9 +62,167 @@ async function render() {
     if (currentTab === 'integrate') renderIntegrate();
 }
 
+// Skeletons Templates
+const skeletonMetrics = `
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    ${Array(4).fill().map(() => `
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 animate-pulse">
+            <div class="h-6 w-6 bg-gray-200 rounded-md mb-3"></div>
+            <div class="h-8 w-24 bg-gray-200 rounded-md mb-2"></div>
+            <div class="h-4 w-32 bg-gray-100 rounded-md"></div>
+        </div>
+    `).join('')}
+</div>
+`;
+
+const skeletonAI = `
+<div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 animate-pulse mb-6">
+    <div class="h-6 w-48 bg-gray-200 rounded-md mb-4"></div>
+    <div class="space-y-3">
+        <div class="h-4 w-full bg-gray-100 rounded-md"></div>
+        <div class="h-4 w-5/6 bg-gray-100 rounded-md"></div>
+        <div class="h-4 w-4/6 bg-gray-100 rounded-md"></div>
+    </div>
+</div>
+`;
+
+const skeletonTable = `
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 animate-pulse">
+    <div class="h-6 w-40 bg-gray-200 rounded-md mb-6"></div>
+    <div class="space-y-4">
+        ${Array(5).fill().map(() => `
+            <div class="flex items-center gap-4 border-b border-gray-50 pb-4">
+                <div class="h-10 w-10 bg-gray-200 rounded-full"></div>
+                <div class="flex-1 space-y-2">
+                    <div class="h-4 w-1/4 bg-gray-200 rounded-md"></div>
+                    <div class="h-3 w-1/3 bg-gray-100 rounded-md"></div>
+                </div>
+            </div>
+        `).join('')}
+    </div>
+</div>
+`;
+
+async function renderDashboard() {
+    appContent.innerHTML = `
+        <div class="fade-in">
+            ${skeletonMetrics}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">${skeletonTable}</div>
+                <div class="lg:col-span-1">${skeletonAI}</div>
+            </div>
+        </div>
+    `;
+
+    let rawLeads = [];
+    let events = [];
+    try {
+        rawLeads = await window.Leads.getLeads() || [];
+        events = await window.Leads.getEvents() || [];
+    } catch(e) { console.error(e); }
+
+    const leadsCriados = rawLeads.length;
+    const completos = rawLeads.filter(l => l.status === 'Completo').length;
+    const pageViews = events.filter(e => e.event_name === 'page_view').length;
+    const conversion = pageViews > 0 ? ((leadsCriados / pageViews) * 100).toFixed(1) : 0;
+
+    let aiSuggestions = `
+        <div class="bg-gradient-to-br from-[#10b981]/10 to-emerald-50 p-6 rounded-xl border border-emerald-100">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2 mb-4"><i class="ph ph-sparkle text-[#10b981]"></i> Inteligência Contextual</h3>
+            <ul class="space-y-4">
+                <li class="flex gap-3">
+                    <div class="bg-white p-2 rounded-lg shadow-sm text-yellow-600 h-min"><i class="ph ph-warning-circle"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Queda na conversão</p>
+                        <p class="text-xs text-gray-600 mt-1">A taxa de conversão caiu 12% nas últimas 48h. Sugerimos testar uma nova Headline focada em urgência no passo 1.</p>
+                        <button class="mt-2 text-[11px] font-semibold text-[#10b981] hover:underline">Aplicar sugestão automática</button>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <div class="bg-white p-2 rounded-lg shadow-sm text-blue-600 h-min"><i class="ph ph-trend-up"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Pico de tráfego detectado</p>
+                        <p class="text-xs text-gray-600 mt-1">A fonte de tráfego 'Facebook' está gerando 3x mais acessos hoje. O servidor está escalando bem.</p>
+                    </div>
+                </li>
+                <li class="flex gap-3">
+                    <div class="bg-white p-2 rounded-lg shadow-sm text-purple-600 h-min"><i class="ph ph-magic-wand"></i></div>
+                    <div>
+                        <p class="text-sm font-semibold text-gray-800">Otimização de Copy</p>
+                        <p class="text-xs text-gray-600 mt-1">Nossa IA analisou os textos e identificou oportunidades de persuasão baseadas no perfil predominante de leads.</p>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    `;
+
+    let metricsHtml = `
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-gray-400 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-eye text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${pageViews}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Visitas Únicas</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-[#10b981] mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-user-plus text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${leadsCriados}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Leads Adquiridos</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-blue-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-chart-line-up text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${conversion}%</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Taxa de Conversão</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-purple-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-check-circle text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${completos}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Jornadas Completas</div>
+            </div>
+        </div>
+    `;
+
+    let recentLeadsHtml = `
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in">
+            <div class="px-6 py-5 border-b border-gray-50 flex justify-between items-center">
+                <h3 class="font-bold text-gray-900">Leads Recentes</h3>
+                <button onclick="navigate('leads')" class="text-sm font-medium text-[#10b981] hover:underline">Ver todos os leads</button>
+            </div>
+            <div class="divide-y divide-gray-50">
+                ${rawLeads.slice(0, 5).map(l => `
+                    <div class="p-4 sm:px-6 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="h-10 w-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm border border-emerald-100">
+                                ${(l.name || l.email || '?')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="text-sm font-semibold text-gray-900">${l.name || 'Anônimo'}</p>
+                                <p class="text-xs text-gray-500">${l.email || l.phone || l.whatsapp || 'Contato oculto'}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-medium bg-gray-50 text-gray-600 border border-gray-100">
+                                ${new Date(l.created_at).toLocaleDateString()}
+                            </span>
+                        </div>
+                    </div>
+                `).join('') || '<div class="p-8 text-center text-gray-400 text-sm">Nenhum lead capturado ainda. O funil está aguardando tráfego.</div>'}
+            </div>
+        </div>
+    `;
+
+    appContent.innerHTML = `
+        <div class="fade-in pb-10">
+            ${metricsHtml}
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">${recentLeadsHtml}</div>
+                <div class="lg:col-span-1">${aiSuggestions}</div>
+            </div>
+        </div>
+    `;
+}
+
 async function renderLeads() {
-    // Show some loading state
-    appContent.innerHTML = `<div class="p-10 text-center text-gray-500"><div class="animate-spin inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full mb-4"></div><p>Buscando dados no Supabase...</p></div>`;
+    appContent.innerHTML = `<div class="fade-in">${skeletonTable}</div>`;
     
     // Obter dados reais
     let answers = [];
@@ -118,31 +298,31 @@ async function renderLeads() {
     `;
 
     let metricsHtml = `
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-            <div class="glass-panel p-5 rounded-xl shadow-sm border-t-2 border-t-gray-400">
-                <div class="text-gray-400 mb-1"><i class="ph ph-eye text-xl"></i></div>
-                <div class="text-2xl font-bold">${metrics.visitas}</div>
-                <div class="text-xs text-gray-500 mt-1">Visitas e Acessos</div>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 fade-in">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-gray-400 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-eye text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${metrics.visitas}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Visitas Únicas</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl shadow-sm border-t-2 border-t-blue-500">
-                <div class="text-blue-500 mb-1"><i class="ph ph-user-plus text-xl"></i></div>
-                <div class="text-2xl font-bold">${metrics.adquiridos}</div>
-                <div class="text-xs text-gray-500 mt-1">Leads adquiridos</div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-[#10b981] mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-user-plus text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${metrics.adquiridos}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Leads Adquiridos</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl shadow-sm border-t-2 border-t-purple-500">
-                <div class="text-purple-500 mb-1"><i class="ph ph-mouse-left-click text-xl"></i></div>
-                <div class="text-2xl font-bold">${metrics.taxaInteracao}%</div>
-                <div class="text-xs text-gray-500 mt-1">Taxa de interação</div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-blue-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-chart-line-up text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${metrics.taxaInteracao}%</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Taxa de Conversão</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl shadow-sm border-t-2 border-t-yellow-500">
-                <div class="text-yellow-500 mb-1"><i class="ph ph-star text-xl"></i></div>
-                <div class="text-2xl font-bold">${metrics.qualificados}</div>
-                <div class="text-xs text-gray-500 mt-1">Leads qualificados</div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-yellow-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-star text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${metrics.qualificados}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Leads Qualificados</div>
             </div>
-            <div class="glass-panel p-5 rounded-xl shadow-sm border-t-2 border-t-green-500">
-                <div class="text-green-500 mb-1"><i class="ph ph-check-circle text-xl"></i></div>
-                <div class="text-2xl font-bold">${metrics.completos}</div>
-                <div class="text-xs text-gray-500 mt-1">Fluxos completos</div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-purple-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-check-circle text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${metrics.completos}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Fluxos Completos</div>
             </div>
         </div>
     `;
