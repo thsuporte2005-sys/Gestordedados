@@ -3,6 +3,7 @@
 let currentTab = 'dashboard';
 let currentSubTab = 'respostas';
 let currentFilter = 'todos';
+window.pixelPollingInterval = null;
 const appContent = document.getElementById('app-content');
 
 function setFilter(filter) {
@@ -19,6 +20,10 @@ const defaultFunnel = [
 ];
 
 function navigate(tab) {
+    if(window.pixelPollingInterval) {
+        clearInterval(window.pixelPollingInterval);
+        window.pixelPollingInterval = null;
+    }
     currentTab = tab;
     ['dashboard', 'builder', 'flow', 'design', 'leads', 'integrate'].forEach(t => {
         const el = document.getElementById(`nav-${t}`);
@@ -479,7 +484,81 @@ function renderBuilder() {
     }
 }
 function renderFlow() {
-    appContent.innerHTML = '<div class="glass-panel p-8 text-center text-gray-500 rounded-xl">Fluxograma em breve. O Mapeamento Lógico já pode ser configurado dentro das Opções da aba Construtor!</div>';
+    appContent.innerHTML = `
+    <div class="flex flex-col h-[calc(100vh-8rem)] fade-in">
+        <div class="mb-4">
+            <h2 class="text-2xl font-bold text-gray-900">Automação Visual</h2>
+            <p class="text-sm text-gray-500">Crie fluxos complexos arrastando blocos inteligentes para o canvas.</p>
+        </div>
+        <div class="flex flex-1 gap-6 min-h-0">
+           <!-- Sidebar with draggable nodes -->
+           <div class="w-72 bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-6 overflow-y-auto z-10 relative">
+              <h3 class="font-bold text-gray-900 border-b border-gray-100 pb-2">Blocos de Automação</h3>
+              
+              <div>
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Gatilhos</p>
+                  <div draggable="true" class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-blue-700 font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all mb-2"><div class="bg-white p-1.5 rounded text-blue-600"><i class="ph ph-lightning text-lg"></i></div> Lead Cadastrado</div>
+                  <div draggable="true" class="bg-blue-50 border border-blue-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-blue-700 font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all"><div class="bg-white p-1.5 rounded text-blue-600"><i class="ph ph-check-square-offset text-lg"></i></div> Quiz Finalizado</div>
+              </div>
+
+              <div>
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Condições</p>
+                  <div draggable="true" class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-yellow-700 font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all mb-2"><div class="bg-white p-1.5 rounded text-yellow-600"><i class="ph ph-git-branch text-lg"></i></div> Se Perfil = A</div>
+                  <div draggable="true" class="bg-yellow-50 border border-yellow-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-yellow-700 font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all"><div class="bg-white p-1.5 rounded text-yellow-600"><i class="ph ph-eye text-lg"></i></div> Se Abriu E-mail</div>
+              </div>
+
+              <div>
+                  <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Ações</p>
+                  <div draggable="true" class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-[#10b981] font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all mb-2"><div class="bg-white p-1.5 rounded text-[#10b981]"><i class="ph ph-envelope-simple text-lg"></i></div> Enviar E-mail</div>
+                  <div draggable="true" class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-[#10b981] font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all mb-2"><div class="bg-white p-1.5 rounded text-[#10b981]"><i class="ph ph-whatsapp-logo text-lg"></i></div> Mensagem WhatsApp</div>
+                  <div draggable="true" class="bg-purple-50 border border-purple-200 p-3 rounded-lg flex items-center gap-3 cursor-grab text-purple-700 font-medium text-sm hover:shadow hover:-translate-y-0.5 transition-all"><div class="bg-white p-1.5 rounded text-purple-600"><i class="ph ph-tag text-lg"></i></div> Adicionar Tag</div>
+              </div>
+           </div>
+
+           <!-- Canvas Area -->
+           <div class="flex-1 bg-white rounded-xl shadow-inner border border-gray-200 overflow-hidden relative" style="background-image: radial-gradient(#e5e7eb 1.5px, transparent 1.5px); background-size: 24px 24px; cursor: grab;">
+               
+               <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-4 py-2.5 rounded-lg shadow-sm border border-gray-200 text-sm font-medium text-gray-700 flex items-center gap-2 z-10"><i class="ph ph-cursor-click text-brand-500"></i> Arraste os blocos para o canvas</div>
+               
+               <div class="absolute top-4 right-4 flex gap-2 z-10">
+                   <button class="bg-white p-2 rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition text-gray-600"><i class="ph ph-minus"></i></button>
+                   <button class="bg-white px-3 py-2 rounded-lg shadow-sm border border-gray-200 text-sm font-bold text-gray-600">100%</button>
+                   <button class="bg-white p-2 rounded-lg shadow-sm border border-gray-200 hover:bg-gray-50 transition text-gray-600"><i class="ph ph-plus"></i></button>
+               </div>
+
+               <!-- Example Node 1 -->
+               <div class="absolute top-24 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-md border border-gray-200 w-64 overflow-visible hover:ring-2 hover:ring-blue-200 transition-all cursor-pointer">
+                   <div class="bg-blue-600 text-white p-2 rounded-t-xl text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-1.5 shadow-sm"><i class="ph ph-lightning text-sm"></i> Gatilho de Entrada</div>
+                   <div class="p-4 text-center">
+                       <p class="font-bold text-gray-900 text-sm">Lead Cadastrado</p>
+                       <p class="text-xs text-gray-500 mt-1">Quando lead finaliza captura</p>
+                   </div>
+                   <div class="h-3.5 w-3.5 bg-white rounded-full absolute -bottom-2 left-1/2 -translate-x-1/2 border-[3px] border-gray-300 hover:border-blue-500 hover:scale-125 transition-transform cursor-crosshair z-10"></div>
+               </div>
+
+               <!-- Example Connection Line -->
+               <svg class="absolute inset-0 w-full h-full pointer-events-none z-0">
+                   <path d="M 50% 200 C 50% 250, 50% 250, 50% 300" stroke="#94a3b8" stroke-width="2.5" fill="none" stroke-dasharray="6,4" class="animate-[dash_1s_linear_infinite]" />
+                   <!-- Down Arrow -->
+                   <polygon points="49.5%,300 50.5%,300 50%,305" fill="#94a3b8" />
+               </svg>
+               <style>@keyframes dash { to { stroke-dashoffset: -10; } }</style>
+
+               <!-- Example Node 2 -->
+               <div class="absolute top-[300px] left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-lg border border-emerald-300 w-64 overflow-visible ring-4 ring-emerald-50 hover:-translate-y-1 transition-all cursor-pointer z-10">
+                   <div class="h-3.5 w-3.5 bg-white rounded-full absolute -top-2 left-1/2 -translate-x-1/2 border-[3px] border-emerald-500 z-10"></div>
+                   <div class="bg-emerald-500 text-white p-2 rounded-t-xl text-xs font-bold uppercase tracking-widest text-center flex items-center justify-center gap-1.5 shadow-sm"><i class="ph ph-whatsapp-logo text-sm"></i> Ação Imediata</div>
+                   <div class="p-4 text-center">
+                       <p class="font-bold text-gray-900 text-sm">Mensagem WhatsApp</p>
+                       <p class="text-xs text-gray-500 mt-1 line-clamp-2">"Olá! Vi que você finalizou o Quiz. Aqui está seu acesso exclusivo!"</p>
+                   </div>
+                   <div class="absolute -right-3 -top-3 bg-red-500 text-white h-6 w-6 rounded-full flex items-center justify-center shadow font-bold text-xs cursor-pointer hover:scale-110 transition"><i class="ph ph-x"></i></div>
+                   <div class="h-3.5 w-3.5 bg-white rounded-full absolute -bottom-2 left-1/2 -translate-x-1/2 border-[3px] border-gray-300 hover:border-emerald-500 hover:scale-125 transition-transform cursor-crosshair z-10"></div>
+               </div>
+           </div>
+        </div>
+    </div>
+    `;
 }
 function renderDesign() {
     appContent.innerHTML = '<div class="glass-panel p-8 text-center text-gray-500 rounded-xl">Configurações de Design centralizadas! Acesse o <b>Construtor</b> e clique na área livre do canvas para acessar o Painel Global de Design!</div>';
@@ -836,6 +915,34 @@ async function renderIntegrate() {
             if(apiEl) apiEl.innerHTML = '<span class="text-red-600 font-medium">Erro 404/Rede</span>';
         }
     }, 800);
+
+    // Set up Pixel Polling to check status every 10 seconds
+    if (!window.pixelPollingInterval) {
+        window.pixelPollingInterval = setInterval(async () => {
+            if (currentTab !== 'integrate') {
+                clearInterval(window.pixelPollingInterval);
+                window.pixelPollingInterval = null;
+                return;
+            }
+            try {
+                let pid = localStorage.getItem('integrate_funnel_id');
+                const eData = await window.Leads.getEvents() || [];
+                const ptData = eData.filter(e => e.funnel_id === pid);
+                let polAct = false;
+                const nTime = new Date().getTime();
+                ptData.forEach(e => {
+                    const eT = new Date(e.created_at).getTime();
+                    if(eT > (nTime - 24*60*60*1000)) polAct = true;
+                });
+                const bEl = document.getElementById('int-status-badge');
+                if(bEl) {
+                    bEl.innerHTML = polAct 
+                        ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Conectado</span>`
+                        : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 shadow-sm"><span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span> Aguardando dados</span>`;
+                }
+            } catch(e) {}
+        }, 10000);
+    }
 }
 
 function openSettings() {
@@ -854,8 +961,8 @@ function saveSettings() {
     localStorage.setItem('SUPABASE_URL', url);
     localStorage.setItem('SUPABASE_ANON_KEY', key);
     closeSettings();
-    alert('Configurações do Supabase salvas! A página será recarregada.');
-    location.reload();
+    showToast('Configurações salvas. Recarregando...', 'success');
+    setTimeout(() => location.reload(), 1000);
 }
 
 function publish() {
@@ -879,3 +986,206 @@ document.addEventListener('DOMContentLoaded', () => {
         render();
     }
 });
+
+// Global UI Systems
+
+window.showToast = function(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+    
+    const toast = document.createElement('div');
+    const isError = type === 'error';
+    toast.className = `transform transition-all duration-300 ease-out translate-y-10 opacity-0 bg-white border-l-4 ${isError ? 'border-red-500' : 'border-[#10b981]'} p-4 rounded-xl shadow-lg flex items-center gap-3 w-80 pointer-events-auto`;
+    
+    toast.innerHTML = `
+        <div class="h-8 w-8 rounded-full ${isError ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-[#10b981]'} flex items-center justify-center flex-shrink-0">
+            <i class="ph ${isError ? 'ph-x' : 'ph-check-circle'} text-lg"></i>
+        </div>
+        <div class="flex-1">
+            <p class="text-sm font-semibold text-gray-800">${isError ? 'Atenção' : 'Sucesso'}</p>
+            <p class="text-xs text-gray-600">${message}</p>
+        </div>
+        <button class="text-gray-400 hover:text-gray-700" onclick="this.parentElement.remove()"><i class="ph ph-x"></i></button>
+    `;
+    
+    container.appendChild(toast);
+    
+    requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-10', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+    });
+    
+    setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Profile Modal Actions
+window.openProfileModal = function(tab) {
+    document.getElementById('profile-dropdown').classList.add('hidden');
+    document.getElementById('profile-modal').classList.remove('hidden');
+    switchProfileTab(tab || 'profile');
+}
+
+window.closeProfileModal = function() {
+    document.getElementById('profile-modal').classList.add('hidden');
+}
+
+window.switchProfileTab = function(tab) {
+    // Reset active states
+    ['profile', 'security', 'devices', 'notifications'].forEach(t => {
+        const btn = document.getElementById(`ptab-${t}`);
+        if(btn) {
+            btn.className = 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent';
+        }
+    });
+
+    // Set active state
+    const activeBtn = document.getElementById(`ptab-${tab}`);
+    if(activeBtn) {
+        activeBtn.className = 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors bg-white shadow-sm border border-gray-200 text-[#10b981]';
+    }
+
+    const content = document.getElementById('profile-modal-content');
+    const title = document.getElementById('profile-modal-title');
+
+    if (tab === 'profile') {
+        title.innerText = 'Perfil Geral';
+        content.innerHTML = `
+            <div class="space-y-6 fade-in">
+                <div>
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Foto de Perfil</label>
+                    <div class="flex items-center gap-6">
+                        <div class="h-20 w-20 rounded-full bg-gradient-to-br from-[#10b981] to-emerald-700 flex items-center justify-center text-white font-bold text-3xl shadow-inner">TS</div>
+                        <div class="space-y-2">
+                            <div class="flex gap-2">
+                                <button class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 flex items-center gap-2 transition"><i class="ph ph-upload-simple"></i> Fazer Upload</button>
+                                <button class="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center gap-2 transition"><i class="ph ph-trash"></i> Remover</button>
+                            </div>
+                            <p class="text-xs text-gray-500">JPG, GIF ou PNG. Tamanho máximo de 2MB.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="border-t border-gray-100 pt-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Nome de Exibição</label>
+                        <input type="text" value="Tiago Silva" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-1">Papel no Sistema</label>
+                        <input type="text" value="Admin do Ecossistema" disabled class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-500 cursor-not-allowed">
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (tab === 'security') {
+        title.innerText = 'Segurança & Acesso';
+        content.innerHTML = `
+            <div class="space-y-6 fade-in">
+                <div>
+                    <h4 class="text-sm font-bold text-gray-700 mb-2">Atualizar E-mail</h4>
+                    <div class="flex gap-3">
+                        <input type="email" value="admin@gestor.com" class="flex-1 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
+                        <button class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition" onclick="showToast('Código de verificação enviado.', 'success')">Verificar</button>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">Nós enviaremos um código de confirmação para o novo endereço.</p>
+                </div>
+                <div class="border-t border-gray-100 pt-6">
+                    <h4 class="text-sm font-bold text-gray-700 mb-4">Alterar Senha</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <input type="password" placeholder="Senha Atual" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Nova Senha" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
+                        </div>
+                        <div>
+                            <input type="password" placeholder="Confirmar Nova Senha" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (tab === 'devices') {
+        title.innerText = 'Dispositivos Conectados';
+        content.innerHTML = `
+            <div class="space-y-4 fade-in">
+                <p class="text-sm text-gray-600 mb-6">Aqui você pode visualizar e gerenciar todos os dispositivos que estão logados na sua conta.</p>
+                
+                <div class="border border-emerald-200 rounded-xl p-4 flex items-center justify-between bg-emerald-50/50 shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="h-10 w-10 bg-white rounded-lg border border-emerald-200 flex items-center justify-center text-[#10b981]"><i class="ph ph-laptop text-xl"></i></div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">MacBook Pro (Este dispositivo)</p>
+                            <p class="text-xs text-[#10b981] font-medium">São Paulo, Brasil • Ativo agora</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border border-gray-200 rounded-xl p-4 flex items-center justify-between bg-white shadow-sm hover:border-gray-300 transition-colors" id="device-iphone">
+                    <div class="flex items-center gap-4">
+                        <div class="h-10 w-10 bg-gray-50 rounded-lg border border-gray-200 flex items-center justify-center text-gray-600"><i class="ph ph-device-mobile text-xl"></i></div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">iPhone 14 Pro</p>
+                            <p class="text-xs text-gray-500">São Paulo, Brasil • Visto há 2 horas</p>
+                        </div>
+                    </div>
+                    <button class="text-sm font-medium text-red-600 hover:text-red-700 hover:underline px-3 py-1.5 rounded bg-red-50" onclick="showToast('Sessão do iPhone desconectada', 'success'); document.getElementById('device-iphone').remove()">Desconectar</button>
+                </div>
+                
+                <div class="pt-4 text-center">
+                    <button class="text-sm font-medium text-red-600 hover:text-red-700 hover:underline" onclick="showToast('Todas as outras sessões foram encerradas.', 'success'); document.getElementById('device-iphone')?.remove()">Desconectar todas as outras sessões</button>
+                </div>
+            </div>
+        `;
+    } else if (tab === 'notifications') {
+        title.innerText = 'Configurações de Notificação';
+        content.innerHTML = `
+            <div class="space-y-6 fade-in">
+                <p class="text-sm text-gray-600 mb-2">Controle como e onde você deseja receber alertas da plataforma.</p>
+                
+                <div class="space-y-4 border-t border-gray-100 pt-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Alertas de Vendas (Leads & Conversões)</p>
+                            <p class="text-xs text-gray-500">Receba um alerta sempre que um novo funil converter.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" value="" class="sr-only peer" checked>
+                          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Saúde do Pixel e Integração</p>
+                            <p class="text-xs text-gray-500">Avisos urgentes se o rastreio for interrompido.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" value="" class="sr-only peer" checked>
+                          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">Sugestões de IA Contextual</p>
+                            <p class="text-xs text-gray-500">Dicas semanais para otimizar suas campanhas.</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                          <input type="checkbox" value="" class="sr-only peer">
+                          <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+window.saveProfileSettings = function() {
+    closeProfileModal();
+    showToast('Alterações salvas com sucesso no banco de dados.', 'success');
+}

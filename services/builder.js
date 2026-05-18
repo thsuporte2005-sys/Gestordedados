@@ -462,7 +462,7 @@ window.BuilderApp = (function() {
             window.BuilderApp.render();
         },
         deleteStep: () => {
-            if (funnelData.steps.length <= 1) return alert('O funil precisa de pelo menos uma etapa.');
+            if (funnelData.steps.length <= 1) return showToast('O funil precisa de pelo menos uma etapa.', 'error');
             if (confirm('Excluir esta etapa e todo seu conteúdo?')) {
                 funnelData.steps = funnelData.steps.filter(s => s.id !== activeStepId);
                 activeStepId = funnelData.steps[0].id;
@@ -567,7 +567,7 @@ window.BuilderApp = (function() {
             window.BuilderApp.render();
         },
         publish: () => {
-            alert('Funil publicado!\nTodos os arquivos JSON salvos e gerados. Abra o quiz.html publicamente para rodar o construtor dinâmico!');
+            showToast('Funil publicado! O sistema está pronto e atualizado no servidor.', 'success');
         }
     };
 })();

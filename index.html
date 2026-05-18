@@ -72,7 +72,52 @@
           Sistema Operacional
         </span>
         <div class="h-6 w-px bg-gray-200 hidden sm:block mx-1"></div>
-        <button class="relative text-gray-400 hover:text-[#10b981] transition p-1.5 rounded-full hover:bg-emerald-50"><i class="ph ph-bell text-xl"></i><span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button>
+        <!-- Notifications Dropdown -->
+        <div class="relative">
+          <button onclick="toggleNotificationMenu(event)" id="notif-btn" class="relative text-gray-400 hover:text-[#10b981] transition p-1.5 rounded-full hover:bg-emerald-50 focus:outline-none">
+            <i class="ph ph-bell text-xl"></i>
+            <span class="absolute top-1 right-1 flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span>
+            </span>
+          </button>
+          
+          <div id="notif-dropdown" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden fade-in transform origin-top-right transition-all">
+            <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
+              <h3 class="font-bold text-sm text-gray-900">Notificações</h3>
+              <button class="text-xs font-medium text-[#10b981] hover:underline">Marcar lidas</button>
+            </div>
+            <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+              <div class="p-4 hover:bg-gray-50 transition cursor-pointer flex gap-3">
+                <div class="mt-0.5 h-8 w-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0"><i class="ph ph-currency-dollar text-lg"></i></div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800 leading-tight mb-1">Nova Venda Aprovada!</p>
+                  <p class="text-xs text-gray-600">O lead 'Maria Silva' acabou de comprar via Hotmart.</p>
+                  <p class="text-[10px] text-gray-400 mt-1 font-medium">Há 2 minutos</p>
+                </div>
+              </div>
+              <div class="p-4 hover:bg-gray-50 transition cursor-pointer flex gap-3">
+                <div class="mt-0.5 h-8 w-8 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center flex-shrink-0"><i class="ph ph-warning-circle text-lg"></i></div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800 leading-tight mb-1">Integração Interrompida</p>
+                  <p class="text-xs text-gray-600">Não recebemos eventos do Pixel na última hora.</p>
+                  <p class="text-[10px] text-gray-400 mt-1 font-medium">Há 45 minutos</p>
+                </div>
+              </div>
+              <div class="p-4 hover:bg-gray-50 transition cursor-pointer flex gap-3">
+                <div class="mt-0.5 h-8 w-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0"><i class="ph ph-sparkle text-lg"></i></div>
+                <div>
+                  <p class="text-sm font-semibold text-gray-800 leading-tight mb-1">IA Contextual</p>
+                  <p class="text-xs text-gray-600">Nova sugestão de otimização de Copy disponível para o Funil.</p>
+                  <p class="text-[10px] text-gray-400 mt-1 font-medium">Há 2 horas</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-2 border-t border-gray-100 text-center bg-gray-50">
+              <button class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition">Ver central completa</button>
+            </div>
+          </div>
+        </div>
         <button onclick="window.open('quiz.html', '_blank')" class="text-gray-400 hover:text-[#10b981] p-1.5 transition rounded-full hover:bg-emerald-50" title="Visualizar Live"><i class="ph ph-eye text-xl"></i></button>
         <button onclick="publish()" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium shadow-sm transition-all"><i class="ph ph-rocket-launch"></i> <span class="hidden sm:inline">Publicar</span></button>
         <!-- Profile Avatar Dropdown -->
@@ -94,22 +139,22 @@
             </div>
             
             <div class="p-2">
-              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-image text-lg text-gray-400"></i> Mudar Foto de Perfil</button>
-              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-pencil-simple text-lg text-gray-400"></i> Editar Nome de Exibição</button>
-              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-envelope-simple text-lg text-gray-400"></i> Atualizar E-mail</button>
-              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-lock-key text-lg text-gray-400"></i> Alterar Senha</button>
+              <button onclick="openProfileModal('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-image text-lg text-gray-400"></i> Mudar Foto de Perfil</button>
+              <button onclick="openProfileModal('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-pencil-simple text-lg text-gray-400"></i> Editar Nome de Exibição</button>
+              <button onclick="openProfileModal('security')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-envelope-simple text-lg text-gray-400"></i> Atualizar E-mail</button>
+              <button onclick="openProfileModal('security')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-lock-key text-lg text-gray-400"></i> Alterar Senha</button>
             </div>
             
             <div class="border-t border-gray-100 p-2">
-              <button class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+              <button onclick="openProfileModal('devices')" class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
                 <div class="flex items-center gap-3"><i class="ph ph-devices text-lg text-gray-400"></i> Dispositivos Conectados</div>
                 <span class="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold">2 ativos</span>
               </button>
-              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-bell-ringing text-lg text-gray-400"></i> Configurações de Notificação</button>
+              <button onclick="openProfileModal('notifications')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-bell-ringing text-lg text-gray-400"></i> Configurações de Notificação</button>
             </div>
             
             <div class="border-t border-gray-100 p-2 bg-gray-50/50">
-              <button onclick="window.location.href='login.html'" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg"></i> Encerrar Sessão Segura</button>
+              <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg"></i> Encerrar Sessão Segura</button>
             </div>
           </div>
         </div>
@@ -144,6 +189,41 @@
     </div>
   </div>
 
+  <!-- Profile Settings Modal -->
+  <div id="profile-modal" class="fixed inset-0 bg-black/40 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-3xl h-[80vh] overflow-hidden flex fade-in">
+      
+      <!-- Modal Sidebar -->
+      <div class="w-64 bg-gray-50 border-r border-gray-100 p-4 flex flex-col gap-2">
+        <h3 class="font-bold text-lg text-gray-900 mb-4 px-2 pt-2">Minha Conta</h3>
+        <button onclick="switchProfileTab('profile')" id="ptab-profile" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors bg-white shadow-sm border border-gray-200 text-[#10b981]"><i class="ph ph-user-circle text-lg"></i> Perfil Geral</button>
+        <button onclick="switchProfileTab('security')" id="ptab-security" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-lock-key text-lg"></i> Segurança & Acesso</button>
+        <button onclick="switchProfileTab('devices')" id="ptab-devices" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-devices text-lg"></i> Dispositivos Conectados</button>
+        <button onclick="switchProfileTab('notifications')" id="ptab-notifications" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-bell-ringing text-lg"></i> Notificações</button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="flex-1 flex flex-col">
+        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
+          <h3 class="font-bold text-gray-800" id="profile-modal-title">Configurações de Perfil</h3>
+          <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition"><i class="ph ph-x text-lg"></i></button>
+        </div>
+        
+        <div class="p-8 overflow-y-auto flex-1 bg-white" id="profile-modal-content">
+          <!-- Dynamically filled by JS -->
+        </div>
+
+        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+          <button onclick="closeProfileModal()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancelar</button>
+          <button onclick="saveProfileSettings()" class="px-5 py-2 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669] transition shadow-sm flex items-center gap-2"><i class="ph ph-check"></i> Salvar Alterações</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config/supabase.js"></script>
   <script src="services/tracking.js"></script>
@@ -151,22 +231,42 @@
   <script src="services/builder.js"></script>
   <script src="script.js"></script>
   <script>
-    // Profile Dropdown Logic
+    function toggleNotificationMenu(e) {
+      if(e) e.stopPropagation();
+      const dropdown = document.getElementById('notif-dropdown');
+      dropdown.classList.toggle('hidden');
+      document.getElementById('profile-dropdown').classList.add('hidden');
+    }
+
     function toggleProfileMenu(e) {
       if(e) e.stopPropagation();
       const dropdown = document.getElementById('profile-dropdown');
       dropdown.classList.toggle('hidden');
+      document.getElementById('notif-dropdown').classList.add('hidden');
     }
 
-    // Close dropdown when clicking outside
+    // Close dropdowns when clicking outside
     document.addEventListener('click', function(event) {
-      const dropdown = document.getElementById('profile-dropdown');
-      const btn = document.getElementById('profile-btn');
-      
-      if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !btn.contains(event.target)) {
-        dropdown.classList.add('hidden');
+      const pDropdown = document.getElementById('profile-dropdown');
+      const pBtn = document.getElementById('profile-btn');
+      if (!pDropdown.classList.contains('hidden') && !pDropdown.contains(event.target) && !pBtn.contains(event.target)) {
+        pDropdown.classList.add('hidden');
+      }
+
+      const nDropdown = document.getElementById('notif-dropdown');
+      const nBtn = document.getElementById('notif-btn');
+      if (!nDropdown.classList.contains('hidden') && !nDropdown.contains(event.target) && !nBtn.contains(event.target)) {
+        nDropdown.classList.add('hidden');
       }
     });
+
+    // Logout Helper with Modal/Toast
+    function handleLogout() {
+      if(confirm('Tem certeza que deseja encerrar a sessão de forma segura?')) {
+        showToast('Sessão encerrada com segurança.', 'success');
+        setTimeout(() => window.location.href='login.html', 1000);
+      }
+    }
   </script>
 </body>
 </html>
