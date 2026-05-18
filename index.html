@@ -1,277 +1,892 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de dados</title>
-  
-  <link rel="icon" type="image/png" href="imagens/gestor.png">
-  <link rel="stylesheet" href="style.css">
-  
-  <!-- Tailwind CSS via CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Phosphor Icons -->
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              900: '#0c4a6e',
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Método Bolis Rentables - Quiz</title>
+
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+    </script>
+    <script src="https://cdn.utmify.com.br/scripts/utms/latest.js" data-utmify-fast-start async defer></script>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#28a745',
+              primaryHover: '#218838',
             }
-          },
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
           }
         }
       }
-    }
-  </script>
+    </script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .animate-fade-in-up {
+        animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      @keyframes floating {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-8px); }
+      }
+      .animate-floating {
+        animation: floating 3s ease-in-out infinite;
+      }
+      @keyframes pulseBtn {
+        0% { box-shadow: 0 0 0 0 rgba(236,72,153, 0.6); transform: scale(1); }
+        70% { box-shadow: 0 0 0 15px rgba(236,72,153, 0); transform: scale(1.03); }
+        100% { box-shadow: 0 0 0 0 rgba(236,72,153, 0); transform: scale(1); }
+      }
+      .animate-pulse-btn {
+        animation: pulseBtn 2s infinite;
+      }
+      @keyframes loadingBar {
+        0% { width: 0%; }
+        100% { width: 100%; }
+      }
+      .animate-loading-bar {
+        animation: loadingBar 2.5s ease-in-out forwards;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #f8fafc;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
 </head>
-<body class="bg-[#F8F8F8] font-sans flex h-screen overflow-hidden text-gray-800">
-  
-  <!-- Sidebar -->
-  <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-full hidden md:flex flex-shrink-0 z-20 shadow-sm">
-    <div class="h-16 flex items-center px-6 border-b border-gray-100">
-      <img src="imagens/gestor.png" alt="Logo" class="h-8 w-auto object-contain mr-2" onerror="this.style.display='none'">
-      <span class="font-bold text-lg text-gray-900 tracking-tight">Gestor de dados</span>
-    </div>
-    <div class="p-4 flex-1 overflow-y-auto space-y-1">
-      <p class="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-2">Workspace</p>
-      <button onclick="navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-squares-four text-lg"></i> Dashboard Inteligente</button>
-      <button onclick="navigate('leads')" id="nav-leads" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-chart-line-up text-lg"></i> Analytics Estratégico</button>
-      <button onclick="navigate('ai')" id="nav-ai" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-sparkle text-lg"></i> AI Studio</button>
+<body class="bg-gradient-to-br from-pink-50 via-white to-cyan-50 min-h-screen text-gray-800 font-sans" style="font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+      const { useState, useEffect } = React;
 
-      <p class="px-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-6">Engenharia</p>
-      <button onclick="navigate('builder')" id="nav-builder" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-kanban text-lg"></i> Projetos & Funis</button>
-      <button onclick="navigate('flow')" id="nav-flow" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-git-branch text-lg"></i> Automação Visual</button>
-      <button onclick="navigate('design')" id="nav-design" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-megaphone text-lg"></i> Campanhas</button>
-      <button onclick="navigate('integrate')" id="nav-integrate" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-[#10b981] transition-all"><i class="ph ph-code text-lg"></i> Integração Universal</button>
-    </div>
-    <div class="p-4 border-t border-gray-100">
-      <button onclick="openSettings()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"><i class="ph ph-gear text-lg"></i> Configurações</button>
-    </div>
-  </aside>
-
-  <!-- Main Area -->
-  <div class="flex-1 flex flex-col h-screen overflow-hidden bg-[#F8F8F8]">
-    <!-- Header -->
-    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 flex-shrink-0">
-      <div class="flex items-center gap-4">
-        <!-- Mobile menu toggle -->
-        <button class="md:hidden text-gray-500 hover:text-[#10b981] transition"><i class="ph ph-list text-2xl"></i></button>
-        <h1 class="text-xl font-bold text-gray-900 hidden sm:block" id="header-title">Dashboard Inteligente</h1>
-      </div>
-      <div class="flex items-center space-x-3 sm:space-x-4">
-        <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-          <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-          Sistema Operacional
-        </span>
-        <div class="h-6 w-px bg-gray-200 hidden sm:block mx-1"></div>
-        <!-- Notifications Dropdown -->
-        <div class="relative">
-          <button onclick="toggleNotificationMenu(event)" id="notif-btn" class="relative text-gray-400 hover:text-[#10b981] transition p-1.5 rounded-full hover:bg-emerald-50 focus:outline-none">
-            <i class="ph ph-bell text-xl"></i>
-            <span id="notif-pulse" class="absolute top-1 right-1 flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-red-500 border border-white"></span>
-            </span>
-            <span id="notif-count" class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-[18px] text-center border border-white">0</span>
-          </button>
-          
-          <div id="notif-dropdown" class="hidden absolute right-0 mt-3 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden fade-in transform origin-top-right transition-all">
-            <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
-              <h3 class="font-bold text-sm text-gray-900">Notificações</h3>
-              <button onclick="markNotificationsRead(event)" class="text-xs font-medium text-[#10b981] hover:underline">Marcar lidas</button>
-            </div>
-            <div id="notif-list" class="max-h-80 overflow-y-auto divide-y divide-gray-50">
-              <div class="p-6 text-center text-sm text-gray-400">Carregando notificações...</div>
-            </div>
-            <div class="p-2 border-t border-gray-100 text-center bg-gray-50">
-              <button onclick="navigate('ai')" class="text-xs font-semibold text-gray-500 hover:text-gray-900 transition">Abrir AI Studio</button>
-            </div>
-          </div>
-        </div>
-        <button onclick="window.open('quiz.html', '_blank')" class="text-gray-400 hover:text-[#10b981] p-1.5 transition rounded-full hover:bg-emerald-50" title="Visualizar Live"><i class="ph ph-eye text-xl"></i></button>
-        <button onclick="publish()" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium shadow-sm transition-all"><i class="ph ph-rocket-launch"></i> <span class="hidden sm:inline">Publicar</span></button>
-        <!-- Profile Avatar Dropdown -->
-        <div class="relative">
-          <button onclick="toggleProfileMenu(event)" id="profile-btn" class="h-9 w-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer ml-1 sm:ml-2 hover:border-[#10b981] hover:bg-emerald-50 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
-            <span id="header-avatar" class="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold overflow-hidden">TS</span>
-          </button>
-          
-          <!-- Dropdown Menu -->
-          <div id="profile-dropdown" class="hidden absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden fade-in transform origin-top-right transition-all">
-            <div class="p-4 border-b border-gray-100 bg-gray-50/80 flex items-center gap-3 backdrop-blur-sm">
-              <div id="profile-menu-avatar" class="h-12 w-12 rounded-full bg-gradient-to-br from-[#10b981] to-emerald-700 flex items-center justify-center text-white font-bold text-xl shadow-inner overflow-hidden">
-                TS
-              </div>
-              <div>
-                <p id="profile-menu-name" class="text-sm font-bold text-gray-900 leading-none mb-1">Tiago Silva</p>
-                <p id="profile-menu-role" class="text-xs text-gray-500">Admin do Ecossistema</p>
-              </div>
-            </div>
-            
-            <div class="p-2">
-              <button onclick="openProfileModal('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-image text-lg text-gray-400"></i> Mudar Foto de Perfil</button>
-              <button onclick="openProfileModal('profile')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-pencil-simple text-lg text-gray-400"></i> Editar Nome de Exibição</button>
-              <button onclick="openProfileModal('security')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-envelope-simple text-lg text-gray-400"></i> Atualizar E-mail</button>
-              <button onclick="openProfileModal('security')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-lock-key text-lg text-gray-400"></i> Alterar Senha</button>
-            </div>
-            
-            <div class="border-t border-gray-100 p-2">
-              <button onclick="openProfileModal('devices')" class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
-                <div class="flex items-center gap-3"><i class="ph ph-devices text-lg text-gray-400"></i> Dispositivos Conectados</div>
-                <span class="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold">2 ativos</span>
-              </button>
-              <button onclick="openProfileModal('notifications')" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-bell-ringing text-lg text-gray-400"></i> Configurações de Notificação</button>
-            </div>
-            
-            <div class="border-t border-gray-100 p-2 bg-gray-50/50">
-              <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg"></i> Encerrar Sessão Segura</button>
-            </div>
-          </div>
-        </div>
-    </header>
-
-    <!-- Scrollable Content -->
-    <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8" id="app-content">
-      <!-- Injected views go here -->
-    </main>
-  </div>
-
-  <div id="settings-modal" class="fixed inset-0 bg-black/40 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] fade-in">
-      <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-        <h3 class="font-bold text-lg text-gray-900">Configurações do Ecossistema</h3>
-        <button onclick="closeSettings()" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition"><i class="ph ph-x"></i></button>
-      </div>
-      <div class="p-6 overflow-y-auto space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">URL App Supabase</label>
-          <input type="text" id="set-supa-url" class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-emerald-100 transition" placeholder="https://xyz.supabase.co">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Chave Anon Supabase</label>
-          <input type="text" id="set-supa-key" class="w-full border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-[#10b981] focus:ring-2 focus:ring-emerald-100 transition" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI...">
-        </div>
-      </div>
-      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-        <button onclick="closeSettings()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancelar</button>
-        <button onclick="saveSettings()" class="px-4 py-2 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669] transition shadow-sm">Salvar Banco de Dados</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Profile Settings Modal -->
-  <div id="profile-modal" class="fixed inset-0 bg-black/40 z-[100] hidden flex items-center justify-center backdrop-blur-sm transition-opacity">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[92vh] overflow-hidden flex flex-col md:flex-row fade-in mx-4">
-      
-      <!-- Modal Sidebar -->
-      <div class="md:w-64 w-full bg-gray-50 border-r border-gray-100 p-4 flex md:flex-col gap-2 overflow-x-auto">
-        <h3 class="font-bold text-lg text-gray-900 mb-4 px-2 pt-2 hidden md:block">Minha Conta</h3>
-        <button onclick="switchProfileTab('profile')" id="ptab-profile" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors bg-white shadow-sm border border-gray-200 text-[#10b981]"><i class="ph ph-user-circle text-lg"></i> Perfil Geral</button>
-        <button onclick="switchProfileTab('security')" id="ptab-security" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-lock-key text-lg"></i> Segurança & Acesso</button>
-        <button onclick="switchProfileTab('devices')" id="ptab-devices" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-devices text-lg"></i> Dispositivos Conectados</button>
-        <button onclick="switchProfileTab('notifications')" id="ptab-notifications" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent"><i class="ph ph-bell-ringing text-lg"></i> Notificações</button>
-      </div>
-
-      <!-- Modal Content -->
-      <div class="flex-1 flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-white z-10">
-          <h3 class="font-bold text-gray-800" id="profile-modal-title">Configurações de Perfil</h3>
-          <button onclick="closeProfileModal()" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition"><i class="ph ph-x text-lg"></i></button>
-        </div>
-        
-        <div class="p-5 sm:p-8 overflow-y-auto flex-1 bg-white" id="profile-modal-content">
-          <!-- Dynamically filled by JS -->
-        </div>
-
-        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-          <button onclick="closeProfileModal()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition">Cancelar</button>
-          <button onclick="saveProfileSettings()" class="px-5 py-2 bg-[#10b981] text-white rounded-lg text-sm font-medium hover:bg-[#059669] transition shadow-sm flex items-center gap-2"><i class="ph ph-check"></i> Salvar Alterações</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Toast Container -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
-
-  <!-- Native Confirm Modal -->
-  <div id="confirm-modal" class="fixed inset-0 bg-black/40 z-[210] hidden items-center justify-center backdrop-blur-sm px-4">
-    <div class="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-md overflow-hidden fade-in">
-      <div class="p-6">
-        <div id="confirm-icon" class="h-11 w-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center mb-4">
-          <i class="ph ph-warning-circle text-2xl"></i>
-        </div>
-        <h3 id="confirm-title" class="font-bold text-lg text-gray-900 mb-2">Confirmar ação</h3>
-        <p id="confirm-message" class="text-sm text-gray-600 leading-relaxed">Revise antes de continuar.</p>
-      </div>
-      <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-        <button id="confirm-cancel" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Cancelar</button>
-        <button id="confirm-accept" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition">Confirmar</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config/supabase.js"></script>
-  <script src="services/tracking.js"></script>
-  <script src="services/leads.js"></script>
-  <script src="services/builder.js"></script>
-  <script src="services/auth.js"></script>
-  <script src="script.js"></script>
-  <script>
-    function toggleNotificationMenu(e) {
-      if(e) e.stopPropagation();
-      const dropdown = document.getElementById('notif-dropdown');
-      dropdown.classList.toggle('hidden');
-      document.getElementById('profile-dropdown').classList.add('hidden');
-      if (window.renderNotificationDropdown) window.renderNotificationDropdown();
-    }
-
-    function toggleProfileMenu(e) {
-      if(e) e.stopPropagation();
-      const dropdown = document.getElementById('profile-dropdown');
-      dropdown.classList.toggle('hidden');
-      document.getElementById('notif-dropdown').classList.add('hidden');
-    }
-
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(event) {
-      const pDropdown = document.getElementById('profile-dropdown');
-      const pBtn = document.getElementById('profile-btn');
-      if (!pDropdown.classList.contains('hidden') && !pDropdown.contains(event.target) && !pBtn.contains(event.target)) {
-        pDropdown.classList.add('hidden');
-      }
-
-      const nDropdown = document.getElementById('notif-dropdown');
-      const nBtn = document.getElementById('notif-btn');
-      if (!nDropdown.classList.contains('hidden') && !nDropdown.contains(event.target) && !nBtn.contains(event.target)) {
-        nDropdown.classList.add('hidden');
-      }
-    });
-
-    // Logout Helper with Modal/Toast
-    function handleLogout() {
-      window.openConfirmDialog({
-        title: 'Encerrar sessão?',
-        message: 'Sua sessão neste dispositivo será finalizada com segurança.',
-        confirmText: 'Encerrar',
-        tone: 'danger',
-        onConfirm: async () => {
-          await window.AuthManager.signOut();
-          showToast('Sessão encerrada com segurança.', 'success');
-          setTimeout(() => window.location.href='login.html', 700);
+      const quizSteps = [
+        {
+          id: 1, type: 'start',
+          copy: '¿Te gustaría aprender a preparar bolis gourmet deliciosos?\nListos en menos de 15 minutos y con ingredientes simples.',
+          btn: '¡Comenzar ahora!'
+        },
+        {
+          id: 2, type: 'question',
+          copy: '¿Tienes experiencia haciendo bolis gourmet?',
+          options: [
+            { icon: '😃', text: 'No, quiero empezar desde cero.' },
+            { icon: '😎', text: 'Sí, ya sé algunas cosas.' }
+          ]
+        },
+        {
+          id: 3, type: 'question',
+          copy: '¿Qué prefieres: vender bolis y ganar un ingreso extra o solo hacer para tu familia y amigos?',
+          options: [
+            { icon: '💰', text: 'Quiero ganar dinero.' },
+            { icon: '👨‍👩‍👧', text: 'Solo quiero para uso personal' }
+          ]
+        },
+        {
+          id: 4, type: 'question',
+          copy: '¿Sabías que hoy en día hay muchas personas que ganan dinero vendiendo bolis sin salir de casa?',
+          options: [
+            { icon: '😁', text: 'Sí' },
+            { icon: '☹️', text: 'No' }
+          ]
+        },
+        {
+          id: 5, type: 'question',
+          copy: '¿Alguna vez has sentido que trabajas mucho y el dinero nunca es suficiente?',
+          options: [
+            { icon: '😣', text: 'Sí, todo el tiempo…' },
+            { icon: '😐', text: 'A veces...' },
+            { icon: '😁', text: 'No, por suerte me va bien.' }
+          ]
+        },
+        {
+          id: 6, type: 'transition',
+          title: 'Mucho gusto, soy María Teresa...',
+          image: './public/imagens/vermelho.jpg',
+          copy: 'Por mucho tiempo, mi vida fue una lucha constante: trabajaba duro, pero el dinero se me escapaba de las manos. Sé lo que es sentir ese nudo en el estómago cuando se acerca el fin de mes y las cuentas no esperan. Mi cocina era el lugar donde solo cocinaba para mi familia, hasta que decidí transformarla en mi propio negocio de Bolis Lucrativos. Hoy, la paz mental volvió a mi hogar: estoy generando cerca de RD$ 194,540 pesos mensuales. Y lo mejor es que no fue suerte, fue un método. ¡Ahora quiero tomarte de la mano y enseñarte exactamente cómo tú también puedes lograrlo!',
+          btn: 'Continuar'
+        },
+        {
+          id: 7, type: 'question',
+          copy: '¿Ya hiciste algún entrenamiento sobre bolis gourmet? ¿O algo relacionado...?',
+          options: [
+            { icon: '☹️', text: 'Nunca hice.' },
+            { icon: '🤩', text: 'Sí, ya hice.' },
+            { icon: '😎', text: 'Me gustaría hacer.' }
+          ]
+        },
+        {
+          id: 8, type: 'question',
+          copy: '¿Ya habías escuchado hablar de esta técnica de preparar bolis gourmet?',
+          options: [
+            { icon: '😍', text: 'Sí' },
+            { icon: '👎', text: 'No' }
+          ]
+        },
+        {
+          id: 9, type: 'question',
+          copy: '¿Qué tal aprender a hacerlos en casa y con ingredientes simples?',
+          options: [
+            { icon: '😫', text: 'Sería mi sueño, pero tengo dificultad…' },
+            { icon: '😐', text: 'Sí, pero no sé por dónde empezar.' },
+            { icon: '😃', text: 'No sé si esto sería posible.' }
+          ]
+        },
+        {
+          id: 10, type: 'question',
+          copy: '¿Si pudieras ganar dinero haciendo bolis, lo intentarías? ¿Ya imaginaste ganar dinero sin tener que salir de casa?',
+          options: [
+            { icon: '😃', text: '¡Sí! Quiero mucho.' },
+            { icon: '😬', text: 'Tal vez, tengo miedo.' },
+            { icon: '👎', text: 'No, solo quiero mejorar mis técnicas.' }
+          ]
+        },
+        {
+          id: 11, type: 'question',
+          copy: '¿Qué es lo que más te impide comenzar un negocio o aprender algo nuevo?',
+          options: [
+            { icon: '😫', text: 'Falta de tiempo.' },
+            { icon: '💰', text: 'Falta de dinero.' },
+            { icon: '😥', text: 'Miedo de fracasar.' }
+          ]
+        },
+        {
+          id: 12, type: 'transition',
+          title: 'Conoce el "Proyecto Bolis Gourmet"',
+          image: './public/imagens/bolis_morango.jpg',
+          copy: 'Responsable de que mujeres de toda la República Dominicana estén generando ingresos desde sus casas. Ana Silva, la creadora, garantiza que cualquier mujer, incluso sin ningún conocimiento previo, puede ganar entre RD$ 1,575 y RD$ 6,300 pesos por día trabajando desde casa. Todo lo que necesitas es menos de RD$ 1,890 pesos para comenzar hoy mismo.',
+          btn: 'Continuar'
+        },
+        {
+          id: 13, type: 'question',
+          copy: 'Si pudieras cambiar algo en tu vida ahora mismo, ¿qué sería?\nSé sincera, es muy importante...',
+          options: [
+            { icon: '💵', text: 'Tener más dinero y libertad.' },
+            { icon: '🕒', text: 'Más tiempo para mí.' },
+            { icon: '💖', text: 'Hacer algo que me apasione.' }
+          ]
+        },
+        {
+          id: 14, type: 'question',
+          copy: '¿Cómo evalúas tu conocimiento en bolis gourmet?\nSigue siendo sincera...',
+          options: [
+            { icon: '🌱', text: 'Cero, quiero empezar.' },
+            { icon: '📚', text: 'Intermedio, quiero aprender más.' },
+            { icon: '🏆', text: 'Avanzado, ya realizo ventas.' }
+          ]
+        },
+        {
+          id: 15, type: 'question',
+          copy: '¿Cuánto quieres ganar vendiendo bolis?\nEsto es muy importante...',
+          options: [
+            { icon: '💰', text: 'RD$ 33,600 pesos por mes' },
+            { icon: '📈', text: 'Entre RD$ 33,600 y RD$ 97,500' },
+            { icon: '🏆', text: 'Más de RD$ 97,500 pesos' }
+          ]
+        },
+        {
+          id: 16, type: 'analysis',
+          copy: 'Análisis inicial de tu perfil\nBasado en tus respuestas...',
+          title: '¿Vamos a armar un plan?',
+          subtitle: 'Un plan exclusivo hecho para vos de acuerdo con tus necesidades y objetivos, sé sincera en las próximas 5 preguntas.',
+          stats: [
+            { label: 'Mentalidad y Motivación', value: 93 },
+            { label: 'Ingresos', value: 53 },
+            { label: 'Conocimiento general', value: 22 }
+          ],
+          btn: 'Continuar'
+        },
+        {
+          id: 17, type: 'question',
+          copy: '¿Si existiera un entrenamiento paso a paso para aprender a hacer y vender bolis gourmet, lo harías?',
+          options: [
+            { icon: '🙌', text: '¡Sí, inmediatamente!' },
+            { icon: '🤔', text: 'Me gustaría saber más.' },
+            { icon: '😐', text: 'No' }
+          ]
+        },
+        {
+          id: 18, type: 'question',
+          copy: '¿Estarías dispuesta a invertir algunas horas por semana para aprender y practicar en casa?',
+          options: [
+            { icon: '✅', text: 'Sí, puedo hacerlo.' },
+            { icon: '🕐', text: 'Tal vez, si tengo tiempo.' },
+            { icon: '🚫', text: 'No, estoy muy ocupada.' }
+          ]
+        },
+        {
+          id: 19, type: 'question',
+          copy: '¿Te gustaría tener un acompañamiento directo en tu WhatsApp para crear tu propio negocio? Sé sincera...',
+          options: [
+            { icon: '😀', text: '¡Sí, lo necesito!' },
+            { icon: '🙂', text: 'No, solo quiero hacer por diversión.' },
+            { icon: '🤔', text: 'Tal vez más adelante.' }
+          ]
+        },
+        {
+          id: 20, type: 'question',
+          copy: '¿Qué te gustaría más aprender a preparar?',
+          options: [
+            { icon: '🍓', text: 'Bolis de Frutas' },
+            { icon: '🍦', text: 'Bolis Cremosos' },
+            { icon: '🍫', text: 'Bolis con Chocolate' },
+            { icon: '🥛', text: 'Bolis de Leche' },
+            { icon: '🌴', text: 'Bolis Exóticos' },
+            { icon: '🍫', text: 'Bolis de Nutella' }
+          ]
+        },
+        {
+          id: 21, type: 'question',
+          copy: '¿Cuál es la primera cosa que vas a hacer cuando empieces a ganar dinero con tus bolis?',
+          options: [
+            { icon: '💸', text: 'Pagar mis deudas.' },
+            { icon: '🏠', text: 'Ayudar en casa.' },
+            { icon: '🎉', text: 'Ahorrar y darme un regalo' }
+          ]
+        },
+        {
+          id: 22, type: 'question',
+          copy: '¿Estás lista para recibir tu plan personalizado que te enseñará a hacer, vender y crear tu propio negocio de bolis gourmet?',
+          options: [
+            { icon: '🔥', text: '¡Sí, estoy lista!' },
+            { icon: '👎', text: 'No estoy lista.' }
+          ]
         }
-      });
-    }
-  </script>
+      ];
+
+      function Quiz({ onComplete }) {
+        const [currentIndex, setCurrentIndex] = useState(0);
+        const [animating, setAnimating] = useState(false);
+        const [stats, setStats] = useState([0, 0, 0]);
+        const [showAnalysisBtn, setShowAnalysisBtn] = useState(false);
+        const [isFakeLoading, setIsFakeLoading] = useState(false);
+
+        const step = quizSteps[currentIndex];
+        const actualStep = currentIndex; // Etapa 0 é Pág Inicial. Etapa 1 é "1 de 23".
+        const percentage = actualStep > 0 ? Math.round((actualStep / 23) * 100) : 0;
+
+        const handleNext = () => {
+          if (currentIndex < quizSteps.length - 1) {
+            setAnimating(true);
+            setTimeout(() => {
+              setCurrentIndex(prev => prev + 1);
+              setAnimating(false);
+            }, 300);
+          } else {
+            onComplete();
+          }
+        };
+
+        useEffect(() => {
+          if (step.type === 'analysis') {
+            setIsFakeLoading(true);
+            setTimeout(() => {
+              setIsFakeLoading(false);
+              const targets = step.stats.map(s => s.value);
+              setTimeout(() => {
+                const interval = setInterval(() => {
+                  setStats(prev => {
+                    const next = prev.map((val, i) => {
+                      if (val < targets[i]) return val + 1;
+                      return val;
+                    });
+                    if (next.every((val, i) => val >= targets[i])) {
+                      clearInterval(interval);
+                      setShowAnalysisBtn(true);
+                    }
+                    return next;
+                  });
+                }, 30);
+              }, 100);
+            }, 2500);
+          } else {
+            setStats([0, 0, 0]);
+            setShowAnalysisBtn(false);
+          }
+        }, [step]);
+
+        return (
+          <>
+            {actualStep > 0 && (
+              <div className="fixed top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md pb-3 shadow-sm">
+                <div className="w-full bg-gray-200 h-2 overflow-hidden">
+                  <div 
+                    className="bg-gradient-to-r from-pink-500 to-cyan-400 h-2 transition-all duration-500 ease-out" 
+                    style={{ width: `${percentage}%` }}
+                  ></div>
+                </div>
+                <div className="text-center text-sm text-gray-600 font-bold mt-2">
+                  {actualStep} de 23 ({percentage}%)
+                </div>
+              </div>
+            )}
+
+            <div className={`w-full max-w-2xl mx-auto p-4 flex flex-col items-center justify-center min-h-screen ${actualStep > 0 ? 'pt-20' : 'py-8'}`}>
+              <div className={`w-full bg-white rounded-[2rem] shadow-2xl p-8 md:p-12 border border-gray-50 transition-all duration-300 ${animating ? 'opacity-0 scale-95' : 'opacity-100 scale-100 animate-fade-in-up'}`}>
+                
+                {step.type === 'start' && (
+                <div className="text-center flex flex-col items-center">
+                  <div className="w-full max-w-md border-4 border-white bg-gray-100 rounded-xl mb-6 flex items-center justify-center relative overflow-hidden shadow-xl drop-shadow-xl p-0 animate-floating">
+                     <img src="https://confeitarparavender.com.br/wp-content/uploads/2025/06/Geladinho-gourmet-mais-vendidos.jpg" alt="Bolis Gourmet" className="w-full h-auto object-cover rounded-lg" />
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2 leading-tight">
+                    {step.copy.split('\n')[0]}
+                  </h1>
+                  <p className="text-lg md:text-xl text-gray-600 mb-8 font-medium">
+                    {step.copy.split('\n')[1]}
+                  </p>
+                  <button 
+                    onClick={handleNext}
+                    className="mt-4 w-full md:w-3/4 py-4 px-6 rounded-xl font-bold border-none text-white text-lg bg-[#ec4899] hover:scale-105 hover:shadow-lg active:scale-95 active:shadow-md transition-all duration-300 flex items-center justify-center gap-2 animate-pulse-btn"
+                  >
+                    🚀 {step.btn}
+                  </button>
+                </div>
+              )}
+
+              {step.type === 'question' && (
+                <div className="text-center">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-8 leading-snug">
+                    {step.copy}
+                  </h2>
+                  <div className={`grid gap-4 w-full ${step.options.length > 3 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                    {step.options.map((opt, i) => (
+                      <button
+                        key={i}
+                        onClick={handleNext}
+                        className="flex items-center gap-4 text-left p-5 rounded-2xl border border-gray-100 bg-gray-50 hover:border-[#28a745] hover:bg-[#28a745]/5 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-sm"
+                      >
+                        <span className="text-3xl shrink-0">{opt.icon}</span>
+                        <span className="font-bold text-gray-700 text-lg">{opt.text}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {step.type === 'transition' && (
+                <div className="text-center flex flex-col items-center">
+                  {step.image && (
+                    <div className="w-full max-w-sm rounded-[2rem] overflow-hidden mb-6 shadow-xl drop-shadow-xl border-4 border-white mx-auto">
+                      <img src={step.image} alt="Referencia" className="w-full h-auto object-cover" />
+                    </div>
+                  )}
+                  <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-6 leading-tight">
+                    {step.title}
+                  </h2>
+                  <p className="text-lg md:text-xl text-gray-600 mb-10 font-medium whitespace-pre-line leading-relaxed">
+                    {step.copy}
+                  </p>
+                  <button 
+                    onClick={handleNext}
+                    className="w-full md:w-2/3 py-4 rounded-xl font-bold border-none text-white text-lg bg-[#ec4899] hover:scale-105 hover:shadow-lg active:scale-95 active:shadow-md transition-all duration-300 animate-pulse-btn"
+                  >
+                    {step.btn}
+                  </button>
+                </div>
+              )}
+
+              {step.type === 'analysis' && isFakeLoading && (
+                <div className="text-center flex flex-col items-center py-10 w-full animate-fade-in-up">
+                  <h2 className="text-2xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500 mb-10">
+                    Analizando tu perfil...
+                  </h2>
+                  <div className="w-full max-w-sm bg-gray-100 rounded-full h-5 mb-10 shadow-inner overflow-hidden relative border border-gray-200">
+                    <div className="bg-gradient-to-r from-pink-500 to-cyan-500 h-5 rounded-full animate-loading-bar"></div>
+                  </div>
+                  <div className="text-5xl animate-spin">⏳</div>
+                </div>
+              )}
+
+              {step.type === 'analysis' && !isFakeLoading && (
+                <div className="text-left w-full flex flex-col items-center animate-fade-in-up">
+                  <h2 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500 mb-3 text-center">
+                    {step.title}
+                  </h2>
+                  <p className="text-gray-500 mb-8 font-medium text-center text-lg">{step.subtitle}</p>
+                  
+                  <div className="bg-white border border-gray-100 p-8 rounded-3xl mb-8 shadow-xl w-full">
+                    <p className="font-extrabold text-gray-800 mb-8 text-xl text-center">{step.copy.split('\n')[0]}</p>
+                    
+                    <div className="space-y-6 md:space-y-8 px-2 md:px-8">
+                      {step.stats.map((stat, i) => (
+                        <div key={i}>
+                          <div className="flex justify-between font-bold text-gray-700 text-base mb-2">
+                            <span>{stat.label}</span>
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500 font-black">{stats[i]}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-4 shadow-inner overflow-hidden border border-gray-200">
+                            <div 
+                              className="bg-gradient-to-r from-pink-500 to-cyan-500 h-4 rounded-full transition-all duration-300 ease-out"
+                              style={{ width: `${stats[i]}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {showAnalysisBtn && (
+                    <button 
+                      onClick={handleNext}
+                      className="w-full md:w-2/3 py-4 rounded-xl border-none font-bold text-white text-xl bg-[#ec4899] hover:scale-105 hover:shadow-lg active:scale-95 active:shadow-md transition-all duration-300 animate-pulse-btn uppercase tracking-wide"
+                    >
+                      {step.btn}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            </div>
+          </>
+        );
+      }
+
+      function VSL() {
+        const [timeLeft, setTimeLeft] = useState(15 * 60);
+        const [openFaq, setOpenFaq] = useState(null);
+        const [showPitch, setShowPitch] = useState(false);
+        const [vslStep, setVslStep] = useState(0);
+
+        useEffect(() => {
+          const timer = setInterval(() => {
+            setTimeLeft(prev => (prev > 0 ? prev - 1 : 0));
+          }, 1000);
+
+          const pitchTimer = setTimeout(() => {
+            setShowPitch(true);
+          }, 50000);
+
+          // Injetando o SDK do Player Vturb/ConverteAI
+          const s = document.createElement("script");
+          s.src = "https://scripts.converteai.net/lib/js/smartplayer-wc/v4/sdk.js";
+          s.async = true;
+          document.head.appendChild(s);
+
+          return () => {
+            clearInterval(timer);
+            clearTimeout(pitchTimer);
+          };
+        }, []);
+
+        const formatTime = (seconds) => {
+          const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+          const s = (seconds % 60).toString().padStart(2, '0');
+          return `00:${m}:${s}`;
+        };
+
+        const faqs = [
+          { q: '¿Necesito tener experiencia?', a: 'No, el método está diseñado para empezar desde cero absoluto, incluso si nunca has cocinado.' },
+          { q: '¿Cuánto necesito invertir para empezar?', a: 'Muy poco. Con RD$ 1,575 pesos ya puedes comprar los ingredientes iniciales y empezar a vender.' },
+          { q: '¿Cuánto tiempo toma hacer los bolis?', a: 'Las recetas son súper rápidas. En menos de 15 a 30 minutos tendrás tus primeros lotes listos para congelar.' },
+          { q: '¿Puedo trabajar desde casa?', a: '¡Totalmente! Es 100% home office.' },
+          { q: '¿Cómo hacer para que no se derrita rápido?', a: 'Dentro del curso enseñamos la "Técnica Secreta" para que duren mucho más sin perder textura ni sabor.' },
+          { q: '¿Y si no me gusta?', a: 'Tienes 7 días de garantía incondicional.' }
+        ];
+
+        return (
+          <div className="w-full pb-10 animate-fade-in-up">
+            {vslStep === 0 && (
+            <div className="w-full max-w-lg mx-auto px-4 text-center flex flex-col justify-center min-h-screen py-8">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-500 mb-4 leading-tight">
+                ¡Felicidades por llegar hasta aquí!
+              </h1>
+              <p className="text-lg md:text-xl text-gray-500 mb-10 font-medium max-w-2xl mx-auto">
+                Tienes las características y la persistencia de una emprendedora exitosa.
+              </p>
+              
+              <div 
+                className="w-full bg-gray-100 rounded-2xl overflow-hidden shadow-2xl mx-auto max-w-[400px]"
+                dangerouslySetInnerHTML={{ __html: `<div id="ifr_69d061932e18637d61327d53_wrapper" style="margin: 0 auto; width: 100%; max-width: 400px;"> <div style="position: relative; padding: 176.47058823529412% 0 0 0;" id="ifr_69d061932e18637d61327d53_aspect"> <iframe frameborder="0" allowfullscreen src="about:blank" id="ifr_69d061932e18637d61327d53" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" referrerpolicy="origin" onload=" this.onload=null, this.src='https://scripts.converteai.net/f5eb07f5-cb99-45be-89c3-51ed2f90d3a6/players/69d061932e18637d61327d53/v4/embed.html' +(location.search||'?') +'&vl=' +encodeURIComponent(location.href)"></iframe> </div> </div>` }} 
+              />
+
+              {showPitch && (
+                <div className="animate-fade-in-up flex flex-col items-center mt-10 p-6 bg-white rounded-3xl shadow-xl border border-gray-100">
+                  <p className="text-lg md:text-xl text-gray-500 font-medium mb-3">Ok, concluímos la evaluación de tu perfil.</p>
+                  <p className="text-xl md:text-2xl text-gray-900 font-extrabold mb-8 max-w-sm text-center leading-tight">Ahora haz clic en el botón de abajo y descubre si tú también tienes lo necesario para ser una emprendedora de Bolis de éxito.</p>
+                  <button 
+                    onClick={() => setVslStep(1)} 
+                    className="w-full py-5 px-6 rounded-xl border-none font-black text-white text-xl bg-[#ec4899] hover:scale-105 active:scale-95 transition-all duration-300 shadow-[0_15px_40px_rgba(236,72,153,0.4)] animate-pulse-btn uppercase tracking-wide flex items-center justify-center gap-2"
+                  >
+                    CONTINUAR
+                  </button>
+                </div>
+              )}
+            </div>
+            )}
+
+            {vslStep === 1 && (
+            <div className="max-w-3xl mx-auto px-4 space-y-12 animate-fade-in-up mt-10 md:mt-16">
+              
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100 text-center">
+                <h2 className="text-3xl font-black text-gray-800 mb-6 uppercase tracking-tight flex items-center justify-center gap-2">
+                  <span className="text-4xl">🎯</span> ¡TU ANÁLISIS ESTÁ LISTO!
+                </h2>
+                <div className="inline-block bg-[#28a745]/10 border-2 border-[#28a745]/20 text-gray-700 px-6 py-8 rounded-2xl font-medium shadow-sm w-full mx-auto">
+                  Basado en tus respuestas, tienes el potencial de facturar <br/>
+                  <strong className="text-3xl md:text-4xl text-[#28a745] mt-4 block font-black">RD$ 37,800 - 56,700 pesos</strong>
+                  <span className="text-gray-500 font-bold block mt-2 text-lg">en el primer mes.</span>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+                <h3 className="text-2xl font-black mb-8 flex items-center gap-3 border-b-2 border-gray-100 pb-4 text-gray-800">
+                  <span className="text-3xl">📊</span> TU PERFIL EMPRENDEDOR
+                </h3>
+                <ul className="space-y-6 mb-8 text-gray-700 text-lg">
+                  <li className="flex items-start gap-4">
+                    <i className="fa-solid fa-circle-check text-[#28a745] text-2xl mt-1"></i>
+                    <span><strong className="text-gray-900 block mb-1">SITUACIÓN ACTUAL:</strong> Tener más dinero y libertad.</span>
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <i className="fa-solid fa-circle-check text-[#28a745] text-2xl mt-1"></i>
+                    <span><strong className="text-gray-900 block mb-1">OBJETIVOS:</strong> Tener más dinero y libertad.</span>
+                  </li>
+                  <li className="flex items-start gap-4">
+                    <i className="fa-solid fa-circle-check text-[#28a745] text-2xl mt-1"></i>
+                    <span><strong className="text-gray-900 block mb-1">PRINCIPAL PREOCUPACIÓN:</strong> Falta de tiempo.</span>
+                  </li>
+                </ul>
+                <div className="bg-gradient-to-r from-pink-500 to-pink-600 p-5 rounded-xl text-center font-black text-white shadow-lg text-lg transform hover:scale-[1.02] transition-transform">
+                  ANÁLISIS: ¡El Método Bolis Rentables es PERFECTO para ti!
+                </div>
+              </section>
+
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+                <h3 className="text-2xl font-black mb-10 flex items-center gap-3 border-b-2 border-gray-100 pb-4 text-gray-800">
+                  <span className="text-3xl">🔥</span> TU PLAN PERSONALIZADO (30 días)
+                </h3>
+                <div className="space-y-8 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-gray-200">
+                  
+                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full border-4 border-white bg-[#28a745] text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-lg z-10 font-bold text-lg drop-shadow-md">1</div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-2xl border border-gray-100 bg-gray-50 shadow-md ml-6 md:ml-0 hover:shadow-lg transition-shadow">
+                      <h4 className="font-extrabold text-xl text-[#28a745] mb-2 uppercase">SEMANA 1</h4>
+                      <p className="font-black text-gray-900 mb-3 text-lg">RD$ 6,300 - 9,450 pesos</p>
+                      <ul className="text-base text-gray-600 space-y-2 list-disc list-inside font-medium border-t border-gray-200 pt-3">
+                        <li>Primera venta en 48h</li>
+                        <li>Prueba 3 sabores más vendidos</li>
+                        <li>Primeros 8-10 clientes</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full border-4 border-white bg-[#28a745] text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-lg z-10 font-bold text-lg drop-shadow-md">2</div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-2xl border border-gray-100 bg-gray-50 shadow-md ml-6 md:ml-0 hover:shadow-lg transition-shadow">
+                      <h4 className="font-extrabold text-xl text-[#28a745] mb-2 uppercase">SEMANA 2</h4>
+                      <p className="font-black text-gray-900 mb-3 text-lg">RD$ 9,450 - 13,860 pesos</p>
+                      <ul className="text-base text-gray-600 space-y-2 list-disc list-inside font-medium border-t border-gray-200 pt-3">
+                        <li>Clientes vuelven a comprar</li>
+                        <li>El boca a boca comienza</li>
+                        <li>Las ventas se estabilizan</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                    <div className="flex items-center justify-center w-12 h-12 rounded-full border-4 border-white bg-[#28a745] text-white shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-lg z-10 font-bold text-sm drop-shadow-md leading-none text-center">3<br/>4</div>
+                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-3rem)] p-6 rounded-2xl border border-gray-100 bg-gray-50 shadow-md ml-6 md:ml-0 hover:shadow-lg transition-shadow">
+                      <h4 className="font-extrabold text-xl text-[#28a745] mb-2 uppercase">SEMANA 3-4</h4>
+                      <p className="font-black text-gray-900 mb-3 text-lg">RD$ 22,050 - 33,390 pesos</p>
+                      <ul className="text-base text-gray-600 space-y-2 list-disc list-inside font-medium border-t border-gray-200 pt-3">
+                        <li>70% clientes recurrentes</li>
+                        <li>40-60 bolis/día</li>
+                        <li>RD$ 1,575 netos/día</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                </div>
+                <div className="mt-12 bg-gray-900 text-white text-center p-6 rounded-2xl font-black text-2xl shadow-xl flex items-center justify-center gap-3">
+                  <i className="fa-solid fa-wallet text-[#28a745] text-3xl"></i>
+                  TOTAL MES 1: RD$ 37,800 - 56,700 pesos
+                </div>
+              </section>
+
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+                 <h3 className="text-2xl font-black mb-6 flex items-center gap-3 border-b-2 border-gray-100 pb-4 text-gray-800">
+                  <span className="text-3xl">🏁</span> PARA COMENZAR HOY NECESITAS:
+                </h3>
+                <div className="bg-blue-50 border border-blue-100 p-5 rounded-xl text-center mb-8">
+                  <p className="text-xl font-bold text-blue-900">Inversión inicial Total: <span className="text-black font-black">RD$ 1,575 - 2,205 pesos</span></p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-gray-100 text-3xl">🍓</div>
+                    <span className="block text-sm text-gray-500 font-bold uppercase mb-1">Ingredientes</span>
+                    <strong className="text-2xl font-black text-gray-900">RD$ 1,134</strong>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-gray-100 text-3xl">🛍️</div>
+                    <span className="block text-sm text-gray-500 font-bold uppercase mb-1">Bolsitas</span>
+                    <strong className="text-2xl font-black text-gray-900">RD$ 315</strong>
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow">
+                    <div className="w-16 h-16 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-sm border border-gray-100 text-3xl">🏷️</div>
+                    <span className="block text-sm text-gray-500 font-bold uppercase mb-1">Etiquetas</span>
+                    <strong className="text-2xl font-black text-gray-900">RD$ 189</strong>
+                  </div>
+                </div>
+                <div className="bg-[#28a745]/10 border-2 border-[#28a745]/30 text-green-900 p-6 rounded-2xl text-center font-black text-lg mb-4">
+                  💡 ¡Con solo 15 VENTAS ya recuperas la inversión y tienes ganancia!
+                </div>
+                <p className="text-center text-gray-500 font-bold uppercase tracking-widest text-sm">🎯 ¡Después de eso, es solo GANANCIA pura!</p>
+              </section>
+
+              <section className="bg-red-50 border-4 border-red-200 rounded-3xl p-8 md:p-12 text-center shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-2 bg-red-500 animate-pulse"></div>
+                <h3 className="text-2xl md:text-3xl font-black text-red-600 mb-4 flex items-center justify-center gap-3">
+                  ⚠️ ¡ÚLTIMOS CUPOS DE ESTE GRUPO!
+                </h3>
+                <p className="text-gray-800 text-lg mb-8 font-medium max-w-xl mx-auto">Para garantizar soporte de calidad, abrimos solo <strong className="bg-red-200 px-2 py-1 rounded">12 CUPOS</strong> en este grupo.</p>
+                <div className="mb-8 max-w-md mx-auto">
+                  <div className="flex justify-between text-sm font-bold text-gray-700 mb-2">
+                    <span>Quedan solo:</span>
+                    <span className="text-red-600 font-black text-lg">12 cupos disponibles</span>
+                  </div>
+                  <div className="w-full bg-red-200 rounded-full h-4 shadow-inner">
+                    <div className="bg-red-600 h-4 rounded-full" style={{ width: '15%' }}></div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border-2 border-red-100 shadow-lg inline-block w-full sm:w-auto transform hover:scale-105 transition-transform">
+                  <p className="text-sm font-black text-gray-500 uppercase tracking-widest mb-2 flex items-center justify-center gap-2"><i className="fa-regular fa-clock"></i> Este grupo cierra en:</p>
+                  <div className="text-5xl font-black text-red-600 font-mono tracking-widest drop-shadow-sm">{formatTime(timeLeft)}</div>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+                <h3 className="text-3xl font-black text-center mb-10 text-gray-800">📊 COMPARATIVO</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="border border-gray-200 rounded-2xl bg-gray-50 shadow-sm overflow-hidden">
+                    <div className="bg-gray-200 text-gray-500 font-black p-5 text-center text-lg flex items-center justify-center gap-2">
+                      <i className="fa-solid fa-circle-xmark"></i> SIN EL METODO
+                    </div>
+                    <ul className="p-6 space-y-4">
+                      <li className="flex items-center gap-3 text-gray-500 font-semibold"><i className="fa-solid fa-circle-xmark text-gray-400"></i> Prueba y error</li>
+                      <li className="flex items-center gap-3 text-gray-500 font-semibold"><i className="fa-solid fa-circle-xmark text-gray-400"></i> Perder dinero en ingredientes</li>
+                      <li className="flex items-center gap-3 text-gray-500 font-semibold"><i className="fa-solid fa-circle-xmark text-gray-400"></i> No sabes cómo vender</li>
+                      <li className="flex items-center gap-3 text-gray-500 font-semibold"><i className="fa-solid fa-circle-xmark text-gray-400"></i> Bolis aguados que se derriten</li>
+                    </ul>
+                  </div>
+                  <div className="border-4 border-[#28a745] rounded-2xl bg-white shadow-xl overflow-hidden relative transform md:-translate-y-2">
+                    <div className="absolute top-0 right-0 bg-[#28a745] text-white text-[10px] font-black px-4 py-1 rounded-bl-xl uppercase tracking-widest shadow-md">Recomendado</div>
+                    <div className="bg-[#28a745]/10 text-[#28a745] font-black p-5 text-center text-lg flex items-center justify-center gap-2 border-b border-[#28a745]/20">
+                      <i className="fa-solid fa-circle-check"></i> CON EL METODO
+                    </div>
+                    <ul className="p-6 space-y-4">
+                      <li className="flex items-center gap-3 text-gray-900 font-bold"><i className="fa-solid fa-circle-check text-[#28a745]"></i> Sistema validado paso a paso</li>
+                      <li className="flex items-center gap-3 text-gray-900 font-bold"><i className="fa-solid fa-circle-check text-[#28a745]"></i> Ganancia desde el día 1</li>
+                      <li className="flex items-center gap-3 text-gray-900 font-bold"><i className="fa-solid fa-circle-check text-[#28a745]"></i> Scripts probados para vender</li>
+                      <li className="flex items-center gap-3 text-gray-900 font-bold"><i className="fa-solid fa-circle-check text-[#28a745]"></i> Técnica anti-derretimiento</li>
+                    </ul>
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-gray-900 text-white rounded-3xl shadow-2xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 md:gap-12 border-4 border-gray-800">
+                 <div className="w-40 h-40 md:w-48 md:h-48 rounded-xl overflow-hidden shrink-0 border-4 border-pink-500 shadow-md drop-shadow-xl bg-white">
+                   <img src="./public/imagens/vermelho.jpg" alt="María Teresa" className="w-full h-full object-cover"/>
+                 </div>
+                 <div className="text-center md:text-left">
+                   <h3 className="text-3xl font-black mb-2 flex items-center justify-center md:justify-start gap-2">María Teresa <i className="fa-solid fa-shield-check text-blue-400"></i></h3>
+                   <p className="text-sm text-gray-400 mb-6 font-bold uppercase tracking-widest">Creadora - Bolis Rentables</p>
+                   <p className="text-gray-200 italic leading-relaxed text-lg md:text-xl font-medium border-l-4 border-pink-500 pl-4 md:pl-6 text-left">
+                     "¡Hola! Soy María Teresa. Creé el Método Primera Venta en 48h después de ver a muchas mujeres como tú atrapadas en trabajos que no aman. Hoy ayudo a + de 1.500 alumnas a facturar."
+                   </p>
+                 </div>
+              </section>
+
+              <div className="rounded-3xl overflow-hidden shadow-2xl bg-white mt-16 border-2 border-[#28a745]" id="offer">
+                <div className="bg-gradient-to-r from-[#218838] to-[#28a745] text-white text-center py-6 font-black text-2xl uppercase tracking-widest shadow-inner">
+                   MÉTODO BOLIS RENTABLES
+                </div>
+                <div className="p-8 md:p-12">
+                   <div className="text-center mb-12">
+                     <p className="text-gray-400 font-bold text-xl mb-2 uppercase tracking-wide">Valor Original <span className="line-through">RD$ 1,999 pesos</span></p>
+                     <p className="text-gray-800 font-black mb-2 text-2xl">SOLO POR HOY:</p>
+                     <div className="text-7xl font-black text-[#28a745] mb-4 drop-shadow-sm">RD$ 679</div>
+                     <div className="inline-block bg-yellow-400 text-yellow-900 font-black px-6 py-2 rounded-full text-base shadow-md transform -rotate-2">
+                       ⚡ Descuento Seguro del 66% ⚡
+                     </div>
+                   </div>
+
+                   <div className="mb-12 bg-gray-50 p-8 rounded-3xl border border-gray-200">
+                     <h4 className="font-black text-gray-900 mb-6 text-xl">✅ Lo que exactamente vas a recibir:</h4>
+                     <ul className="space-y-4">
+                       {[
+                         'Módulo 1: Cómo empezar desde cero',
+                         'Módulo 2: 30+ recetas que más venden (cremosos, frutas)',
+                         'Módulo 3: Lista completa de ingredientes',
+                         'Módulo 4: Modo de preparación detallado paso a paso',
+                         'Módulo 5: Método Primera Venta en 48h',
+                         'Acceso vitalicio a todo el contenido'
+                       ].map((item, i) => (
+                         <li key={i} className="flex items-start gap-4 text-base md:text-lg text-gray-700 font-semibold border-b border-gray-200 pb-3">
+                           <i className="fa-solid fa-circle-check text-[#28a745] text-xl mt-1"></i> {item}
+                         </li>
+                       ))}
+                     </ul>
+                   </div>
+
+                   <div className="bg-gradient-to-br from-orange-50 to-pink-50 border border-orange-100 rounded-3xl p-8 mb-12 shadow-inner">
+                     <h4 className="font-black text-orange-900 mb-2 text-2xl">🎁 4 BONOS EXCLUSIVOS</h4>
+                     <p className="text-base text-orange-800 mb-8 font-bold">Si aseguras tu acceso HOY, llevarás GRATIS bonos evaluados en RD$ 2,961 pesos:</p>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                       {[
+                         { t: 'Menú Editable Profesional', p: 'VALE RD$ 756', desc: 'Template Canva 100% personalizable.', img: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=300&h=200&fit=crop' },
+                         { t: 'Planilla Precios Inteligente', p: 'VALE RD$ 630', desc: 'Calcula gasto y ganancia exactos.', img: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=300&h=200&fit=crop' },
+                         { t: 'Certificado de Vendedora', p: 'VALE RD$ 945', desc: 'Reconoce tu esfuerzo profesional.', img: 'https://images.unsplash.com/photo-1589330694653-efa64f84d62b?w=300&h=200&fit=crop' },
+                         { t: 'Scripts WhatsApp', p: 'VALE RD$ 630', desc: 'Mensajes probados que venden.', img: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=300&h=200&fit=crop' },
+                       ].map((b,i) => (
+                         <div key={i} className="bg-white p-5 rounded-2xl border border-orange-100 shadow-md flex flex-col gap-4">
+                           <div className="w-full text-center">
+                              <span className="inline-block bg-orange-500 text-white font-black px-3 py-1 rounded-full text-xs mb-3 shadow-sm transform -translate-y-2">BONO #{i+1} GRATIS</span>
+                           </div>
+                           <img src={b.img} alt={b.t} className="w-full h-32 object-cover rounded-xl shadow-md drop-shadow max-w-[200px] mx-auto border border-gray-100" />
+                           <div className="text-center">
+                             <p className="font-extrabold text-gray-900 text-lg mb-1 leading-tight">{b.t}</p>
+                             <p className="text-sm text-gray-500 mb-2 font-medium">{b.desc}</p>
+                           </div>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+
+                   <div className="text-center bg-gray-50 rounded-3xl p-8 md:p-12 mb-8 border-2 border-dashed border-gray-300">
+                     <h4 className="font-black text-gray-900 mb-4 text-2xl uppercase">💰 RESUMEN DE LA OFERTA HOY</h4>
+                     <p className="text-base md:text-lg text-gray-600 mb-6 font-bold">Valor Total Real: <span className="line-through text-red-500">RD$ 2,961 pesos</span><br/>Pero nosotros te lo rebajamos a 👇</p>
+                     
+                     <div className="text-6xl font-black text-[#28a745] mb-2 drop-shadow-md">RD$ 679</div>
+                     <p className="text-sm font-black text-gray-400 uppercase tracking-widest mb-6">pago único · al contado</p>
+
+                     <div className="bg-red-100 border border-red-200 text-red-700 text-base font-bold p-4 rounded-xl mb-4 max-w-sm mx-auto shadow-inner">
+                       ⚠️ Atención: Quedan solo 12 cupos para finalizar
+                     </div>
+                   </div>
+
+                   <button className="w-full py-6 rounded-xl border-none font-black text-white text-xl sm:text-2xl bg-[#ec4899] hover:scale-[1.02] hover:shadow-2xl active:scale-95 active:shadow-md transition-all duration-300 flex flex-col items-center justify-center shadow-[0_15px_40px_rgba(236,72,153,0.4)] relative overflow-hidden group animate-pulse-btn">
+                     <span className="relative z-10 flex items-center gap-3">🔥 SÍ, QUIERO ASEGURAR MI CUPO</span>
+                   </button>
+                   <p className="text-center text-sm font-bold text-gray-500 mt-6 flex items-center justify-center gap-2"><i className="fa-solid fa-lock"></i> Compra 100% Segura. Acceso Inmediato.</p>
+                </div>
+              </div>
+
+              <section className="bg-gray-50 rounded-3xl p-8 border border-gray-200 mt-16 max-w-2xl mx-auto flex flex-col sm:flex-row items-center gap-6 shadow-inner text-center sm:text-left">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-full flex items-center justify-center shadow-lg shrink-0 border-4 border-pink-500 overflow-hidden">
+                  <img src="./public/imagens/galantia.jpg" alt="Garantía 7 Días" className="w-full h-full object-contain p-2"/>
+                </div>
+                <div className="text-center sm:text-left">
+                  <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-4 uppercase tracking-tight">🛡️ GARANTÍA BLINDADA 7 DÍAS</h3>
+                  <p className="text-base md:text-lg text-gray-600 leading-relaxed font-semibold">
+                    Confío tanto en este entrenamiento que asumo todos los riesgos por ti. Tienes 7 días para probar y ver los resultados. Si no te gusta, devolveré el 100% del valor invertido.
+                  </p>
+                </div>
+              </section>
+
+              <section className="text-center">
+                <h3 className="text-2xl md:text-3xl font-black text-gray-900 mb-4 px-4">
+                  ⭐ 94% de Alumnas Recomiendan la Guía
+                </h3>
+                <p className="text-base md:text-lg font-bold text-gray-500 mb-10 max-w-sm mx-auto flex items-center justify-center gap-2">
+                  <i className="fa-solid fa-star text-yellow-400"></i> 4.9/5 estrellas (523 evaluaciones)
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto mt-8">
+                  <div className="rounded-3xl overflow-hidden shadow-xl border-4 border-white drop-shadow-sm hover:scale-[1.02] transition-all duration-300">
+                    <img src="./public/imagens/depoimento1.jpg" alt="Depoimento Estudiante 1" className="w-full h-auto object-cover"/>
+                  </div>
+                  <div className="rounded-3xl overflow-hidden shadow-xl border-4 border-white drop-shadow-sm hover:scale-[1.02] transition-all duration-300">
+                    <img src="./public/imagens/epoimento2.jpg" alt="Depoimento Estudiante 2" className="w-full h-auto object-cover"/>
+                  </div>
+                </div>
+              </section>
+
+              <section className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 border border-gray-100">
+                 <h3 className="text-3xl font-black mb-8 text-center text-gray-900">❓ PREGUNTAS FRECUENTES</h3>
+                 <div className="space-y-4">
+                   {faqs.map((faq, idx) => (
+                     <div key={idx} className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                       <button 
+                         onClick={() => setOpenFaq(openFaq === idx ? null : idx)} 
+                         className="w-full text-left p-6 bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition-colors font-bold text-gray-900 text-base md:text-lg"
+                       >
+                         {faq.q}
+                         <i className={`fa-solid ${openFaq === idx ? 'fa-chevron-up' : 'fa-chevron-down'} text-gray-400`}></i>
+                       </button>
+                       {openFaq === idx && (
+                         <div className="p-6 bg-white border-t border-gray-100 text-gray-600 text-base font-medium leading-relaxed">
+                           {faq.a}
+                         </div>
+                       )}
+                     </div>
+                   ))}
+                 </div>
+              </section>
+
+              <div className="text-center pb-8 pt-8 max-w-xl mx-auto">
+                 <button 
+                   onClick={() => document.getElementById('offer').scrollIntoView({behavior: 'smooth'})}
+                   className="w-full py-6 rounded-xl border-none font-black text-white text-xl md:text-2xl bg-[#ec4899] hover:scale-[1.02] hover:shadow-2xl active:scale-95 active:shadow-md transition-all duration-300 flex justify-center uppercase shadow-[0_15px_40px_rgba(236,72,153,0.4)] animate-pulse-btn"
+                 >
+                   🔥 ¡SÍ, QUIERO COMENZAR HOY!
+                 </button>
+              </div>
+
+              <footer className="text-center text-sm font-bold text-gray-400 border-t border-gray-200 pt-10 pb-6">
+                 © 2026 Método Bolis Lucrativos - Todos los derechos reservados
+              </footer>
+            </div>
+            )}
+          </div>
+        );
+      }
+
+      function App() {
+        const [isQuizComplete, setIsQuizComplete] = useState(false);
+
+        return (
+          <div className="w-full flex justify-center items-start min-h-screen">
+            {isQuizComplete ? (
+              <VSL />
+            ) : (
+              <Quiz onComplete={() => setIsQuizComplete(true)} />
+            )}
+          </div>
+        );
+      }
+
+      const rootElement = document.getElementById('root');
+      const root = ReactDOM.createRoot(rootElement);
+      root.render(<App />);
+    </script>
 </body>
 </html>
