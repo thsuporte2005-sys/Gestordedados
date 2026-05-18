@@ -35,6 +35,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Captura campos do lead globalmente para enviar quando Form submeter
     let leadCapture = { name: '', email: '', phone: '' };
 
+    function showQuizFeedback(message, type = 'error') {
+        const previous = document.getElementById('quiz-feedback');
+        if (previous) previous.remove();
+        const feedback = document.createElement('div');
+        feedback.id = 'quiz-feedback';
+        feedback.className = `fixed left-1/2 top-5 -translate-x-1/2 z-50 px-4 py-3 rounded-xl shadow-lg border text-sm font-semibold animate-fade-in ${type === 'error' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`;
+        feedback.textContent = message;
+        document.body.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 3500);
+    }
+
     function updateProgress() {
         if (funnelData.steps.length <= 1) {
             progressWrapper.classList.add('hidden');
@@ -75,7 +86,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(!r.value) { r.classList.add('border-red-500'); hasErr = true; }
                 else { r.classList.remove('border-red-500'); }
             });
-            if (hasErr) return alert('Preencha os campos obrigatórios.');
+            if (hasErr) {
+                showQuizFeedback('Preencha os campos obrigatórios.');
+                return;
+            }
 
             // Coletar Dados
             const inputs = containerEl.querySelectorAll('input[data-lead-field]');

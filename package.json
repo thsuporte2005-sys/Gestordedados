@@ -4,7 +4,8 @@
   "description": "Dashboard and API for tracking",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "check": "node --check script.js && node --check services/auth.js && node --check services/leads.js && node --check services/builder.js && node --check quiz.js && node --check api/track.js",
+    "test": "npm run check"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0"

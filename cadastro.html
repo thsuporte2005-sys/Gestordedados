@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro | Gestor de Dados</title>
+  <link rel="icon" type="image/png" href="imagens/gestor.png">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { 500: '#10b981', 600: '#059669', 900: '#064e3b' } },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-[#f8fafc] text-gray-900 flex items-center justify-center p-4">
+  <main class="w-full max-w-md">
+    <section class="bg-white border border-gray-200 shadow-xl rounded-2xl p-7 sm:p-8 fade-in">
+      <div class="text-center mb-8">
+        <img src="imagens/gestor.png" alt="Gestor de Dados" class="h-16 w-16 object-contain mx-auto mb-4">
+        <h1 class="text-2xl font-bold tracking-tight">Criar Conta</h1>
+        <p class="text-sm text-gray-500 mt-2">Configure seu acesso ao ecossistema SaaS.</p>
+      </div>
+
+      <form id="signup-form" class="space-y-4" novalidate>
+        <div>
+          <label for="displayName" class="block text-sm font-semibold text-gray-700 mb-1">Nome de exibicao</label>
+          <input id="displayName" type="text" autocomplete="name" class="auth-input" placeholder="Tiago Silva" required>
+          <p id="displayName-error" class="auth-error"></p>
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-semibold text-gray-700 mb-1">E-mail</label>
+          <input id="email" type="email" autocomplete="email" class="auth-input" placeholder="voce@empresa.com" required>
+          <p id="email-error" class="auth-error"></p>
+        </div>
+
+        <div>
+          <label for="password" class="block text-sm font-semibold text-gray-700 mb-1">Senha</label>
+          <input id="password" type="password" autocomplete="new-password" class="auth-input" placeholder="Minimo 8 caracteres" required>
+          <div class="mt-2 grid grid-cols-3 gap-2 text-[10px] font-semibold">
+            <span id="rule-length" class="auth-rule">8+ caracteres</span>
+            <span id="rule-upper" class="auth-rule">Maiuscula</span>
+            <span id="rule-number" class="auth-rule">Numero</span>
+          </div>
+          <p id="password-error" class="auth-error"></p>
+        </div>
+
+        <button id="submit-btn" type="submit" class="w-full bg-brand-500 hover:bg-brand-600 text-white rounded-xl py-3 font-bold shadow-sm transition flex items-center justify-center gap-2">
+          <i class="ph ph-user-plus"></i>
+          Criar conta
+        </button>
+      </form>
+
+      <p class="text-center text-sm text-gray-500 mt-6">
+        Ja tem acesso?
+        <a href="login.html" class="font-semibold text-brand-600 hover:underline">Entrar</a>
+      </p>
+    </section>
+  </main>
+
+  <div id="toast-container" class="fixed bottom-5 right-5 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config/supabase.js"></script>
+  <script src="services/auth.js"></script>
+  <script>
+    const form = document.getElementById('signup-form');
+    const displayName = document.getElementById('displayName');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const submitBtn = document.getElementById('submit-btn');
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const isError = type === 'error';
+      toast.className = `translate-y-4 opacity-0 transition-all duration-300 bg-white border-l-4 ${isError ? 'border-red-500' : 'border-brand-500'} p-4 rounded-xl shadow-lg flex items-center gap-3 w-80 pointer-events-auto`;
+      toast.innerHTML = `<div class="h-8 w-8 rounded-full ${isError ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-brand-600'} flex items-center justify-center"><i class="ph ${isError ? 'ph-x' : 'ph-check-circle'}"></i></div><p class="text-sm text-gray-700 font-medium">${message}</p>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.remove('translate-y-4', 'opacity-0'));
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 250);
+      }, 3500);
+    }
+
+    function setError(id, message) {
+      document.getElementById(`${id}-error`).textContent = message || '';
+      document.getElementById(id).classList.toggle('border-red-300', Boolean(message));
+    }
+
+    function setRule(id, ok) {
+      document.getElementById(id).className = `auth-rule ${ok ? 'auth-rule-ok' : ''}`;
+    }
+
+    function validate() {
+      const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value);
+      const passwordValid = window.AuthManager.validatePassword(password.value);
+      setError('displayName', displayName.value.trim().length >= 3 ? '' : 'Use pelo menos 3 caracteres.');
+      setError('email', emailValid ? '' : 'Informe um e-mail valido.');
+      setError('password', passwordValid ? '' : 'Use 8 caracteres, uma maiuscula e um numero.');
+      setRule('rule-length', password.value.length >= 8);
+      setRule('rule-upper', /[A-Z]/.test(password.value));
+      setRule('rule-number', /\d/.test(password.value));
+      return displayName.value.trim().length >= 3 && emailValid && passwordValid;
+    }
+
+    [displayName, email, password].forEach(input => input.addEventListener('input', validate));
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!validate()) return;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin"></span> Criando...';
+      try {
+        await window.AuthManager.signUp({
+          displayName: displayName.value,
+          email: email.value,
+          password: password.value
+        });
+        showToast('Conta criada. Abrindo seu painel...');
+        setTimeout(() => window.location.href = 'index.html', 700);
+      } catch (error) {
+        showToast(error.message || 'Nao foi possivel criar a conta.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="ph ph-user-plus"></i> Criar conta';
+      }
+    });
+
+    window.AuthManager.ensureSeedUser();
+  </script>
+</body>
+</html>

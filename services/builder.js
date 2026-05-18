@@ -463,12 +463,24 @@ window.BuilderApp = (function() {
         },
         deleteStep: () => {
             if (funnelData.steps.length <= 1) return showToast('O funil precisa de pelo menos uma etapa.', 'error');
-            if (confirm('Excluir esta etapa e todo seu conteúdo?')) {
+            const deleteActiveStep = () => {
                 funnelData.steps = funnelData.steps.filter(s => s.id !== activeStepId);
                 activeStepId = funnelData.steps[0].id;
                 selectedComponentId = null;
                 saveLocal();
                 window.BuilderApp.render();
+                if (window.showToast) window.showToast('Etapa excluida.', 'success');
+            };
+            if (window.openConfirmDialog) {
+                window.openConfirmDialog({
+                    title: 'Excluir esta etapa?',
+                    message: 'Todo o conteudo da etapa selecionada sera removido do funil.',
+                    confirmText: 'Excluir etapa',
+                    tone: 'danger',
+                    onConfirm: deleteActiveStep
+                });
+            } else {
+                deleteActiveStep();
             }
         },
         updateStepName: (val) => {
