@@ -75,11 +75,44 @@
         <button class="relative text-gray-400 hover:text-[#10b981] transition p-1.5 rounded-full hover:bg-emerald-50"><i class="ph ph-bell text-xl"></i><span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span></button>
         <button onclick="window.open('quiz.html', '_blank')" class="text-gray-400 hover:text-[#10b981] p-1.5 transition rounded-full hover:bg-emerald-50" title="Visualizar Live"><i class="ph ph-eye text-xl"></i></button>
         <button onclick="publish()" class="bg-[#10b981] hover:bg-[#059669] text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium shadow-sm transition-all"><i class="ph ph-rocket-launch"></i> <span class="hidden sm:inline">Publicar</span></button>
-        <!-- Profile Avatar -->
-        <div class="h-9 w-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer ml-1 sm:ml-2 hover:border-gray-300 transition-colors">
-          <i class="ph ph-user text-gray-500"></i>
+        <!-- Profile Avatar Dropdown -->
+        <div class="relative">
+          <button onclick="toggleProfileMenu(event)" id="profile-btn" class="h-9 w-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center cursor-pointer ml-1 sm:ml-2 hover:border-[#10b981] hover:bg-emerald-50 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2">
+            <i class="ph ph-user text-gray-500"></i>
+          </button>
+          
+          <!-- Dropdown Menu -->
+          <div id="profile-dropdown" class="hidden absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden fade-in transform origin-top-right transition-all">
+            <div class="p-4 border-b border-gray-100 bg-gray-50/80 flex items-center gap-3 backdrop-blur-sm">
+              <div class="h-12 w-12 rounded-full bg-gradient-to-br from-[#10b981] to-emerald-700 flex items-center justify-center text-white font-bold text-xl shadow-inner">
+                TS
+              </div>
+              <div>
+                <p class="text-sm font-bold text-gray-900 leading-none mb-1">Tiago Silva</p>
+                <p class="text-xs text-gray-500">Admin do Ecossistema</p>
+              </div>
+            </div>
+            
+            <div class="p-2">
+              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-image text-lg text-gray-400"></i> Mudar Foto de Perfil</button>
+              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-pencil-simple text-lg text-gray-400"></i> Editar Nome de Exibição</button>
+              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-envelope-simple text-lg text-gray-400"></i> Atualizar E-mail</button>
+              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-lock-key text-lg text-gray-400"></i> Alterar Senha</button>
+            </div>
+            
+            <div class="border-t border-gray-100 p-2">
+              <button class="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors">
+                <div class="flex items-center gap-3"><i class="ph ph-devices text-lg text-gray-400"></i> Dispositivos Conectados</div>
+                <span class="bg-gray-100 text-gray-500 text-[10px] px-2 py-0.5 rounded-full font-bold">2 ativos</span>
+              </button>
+              <button class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"><i class="ph ph-bell-ringing text-lg text-gray-400"></i> Configurações de Notificação</button>
+            </div>
+            
+            <div class="border-t border-gray-100 p-2 bg-gray-50/50">
+              <button onclick="window.location.href='login.html'" class="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 rounded-lg transition-colors"><i class="ph ph-sign-out text-lg"></i> Encerrar Sessão Segura</button>
+            </div>
+          </div>
         </div>
-      </div>
     </header>
 
     <!-- Scrollable Content -->
@@ -117,5 +150,23 @@
   <script src="services/leads.js"></script>
   <script src="services/builder.js"></script>
   <script src="script.js"></script>
+  <script>
+    // Profile Dropdown Logic
+    function toggleProfileMenu(e) {
+      if(e) e.stopPropagation();
+      const dropdown = document.getElementById('profile-dropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+      const dropdown = document.getElementById('profile-dropdown');
+      const btn = document.getElementById('profile-btn');
+      
+      if (!dropdown.classList.contains('hidden') && !dropdown.contains(event.target) && !btn.contains(event.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  </script>
 </body>
 </html>

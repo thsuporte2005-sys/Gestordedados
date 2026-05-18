@@ -573,8 +573,8 @@ async function renderIntegrate() {
     const tagSource = `<script \n  async\n  src="${baseUrl}/pixel.js"\n  data-funnel-id="${funnel_id}"\n  data-public-key="${public_key}"\n  data-endpoint="${baseUrl}/api/track">\n</script>`;
 
     const statusBadgeHtml = isActive 
-        ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Ativo</span>`
-        : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800"><span class="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span> Aguardando</span>`;
+        ? `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200 shadow-sm"><span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Conectado</span>`
+        : `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200 shadow-sm"><span class="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse"></span> Aguardando dados</span>`;
 
     const statusBadgeFinal = `<span id="int-status-badge">${statusBadgeHtml}</span>`;
 
