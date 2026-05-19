@@ -46,3 +46,53 @@ body {
 .table-divider-left {
     border-left: 2px solid #e2e8f0 !important;
 }
+
+.auth-input {
+    width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    color: #111827;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.auth-input:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+
+.auth-error {
+    min-height: 1rem;
+    margin-top: 0.35rem;
+    color: #dc2626;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.auth-rule {
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    color: #6b7280;
+    background: #f9fafb;
+    padding: 0.35rem 0.5rem;
+    text-align: center;
+}
+
+.auth-rule-ok {
+    border-color: #bbf7d0;
+    color: #047857;
+    background: #ecfdf5;
+}
+
+.profile-avatar-preview {
+    background-color: #10b981;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+.modal-open {
+    overflow: hidden;
+}
