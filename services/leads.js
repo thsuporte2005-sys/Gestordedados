@@ -122,10 +122,7 @@ async function exportLeadsToCSV() {
     const leads = await getLeads();
     const answers = await getLeadAnswers();
     
-    if(leads.length === 0) {
-        if (window.showToast) window.showToast('Nenhum lead para exportar.', 'error');
-        return;
-    }
+    if(leads.length === 0) return alert('Nenhum lead para exportar.');
     
     const uniqueQuestions = [...new Set(answers.map(a => a.question || `Etapa ${a.step_number}`))].filter(Boolean);
     
@@ -173,21 +170,10 @@ async function exportLeadsToCSV() {
 }
 
 async function resetData() {
-    if (window.openConfirmDialog) {
-        window.openConfirmDialog({
-            title: 'Resetar todos os dados?',
-            message: 'Leads, respostas e eventos serao apagados. Essa acao nao pode ser desfeita.',
-            confirmText: 'Resetar dados',
-            tone: 'danger',
-            onConfirm: performResetData
-        });
+    if (!confirm("Tem certeza que deseja apagar TODOS os leads, respostas e eventos? Essa ação não pode ser desfeita!")) {
         return;
     }
 
-    await performResetData();
-}
-
-async function performResetData() {
     try {
         if (window.supabaseClient) {
             // No Supabase, precisamos deletar os itens. Dependendo da configuração RLS, pode ser negado caso o front-end não tenha role admin.
@@ -202,13 +188,13 @@ async function performResetData() {
         localStorage.removeItem('lf_answers');
         localStorage.removeItem('lf_events');
         
-        if (window.showToast) window.showToast('Dados resetados com sucesso.', 'success');
+        alert("Dados resetados com sucesso.");
         // Se a função 'render' do script existir, recarrega a view
         if(typeof render === 'function') render();
         else location.reload();
     } catch(e) {
         console.error("Erro ao resetar dados:", e);
-        if (window.showToast) window.showToast('Erro ao resetar no Supabase. O banco local foi limpo.', 'error');
+        alert("Ocorreu um erro ao resetar pelo Supabase. O banco local foi limpo.");
         localStorage.removeItem('lf_leads_db');
         localStorage.removeItem('lf_answers');
         localStorage.removeItem('lf_events');

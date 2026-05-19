@@ -5,48 +5,6 @@ let currentSubTab = 'respostas';
 let currentFilter = 'todos';
 window.pixelPollingInterval = null;
 const appContent = document.getElementById('app-content');
-const DASHBOARD_LAYOUT_KEY = 'gestor_dashboard_widget_order';
-const NOTIFICATIONS_KEY = 'gestor_notifications';
-const AI_REQUESTS_KEY = 'gestor_ai_requests';
-let activeProfileTab = 'profile';
-
-function escapeHtml(value) {
-    return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function readLocalJSON(key, fallback) {
-    try {
-        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
-    } catch(e) {
-        return fallback;
-    }
-}
-
-function writeLocalJSON(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-}
-
-function getInitials(name) {
-    const parts = String(name || 'Usuario').trim().split(/\s+/).slice(0, 2);
-    return parts.map(part => part[0]?.toUpperCase() || '').join('') || 'U';
-}
-
-function relativeTime(dateValue) {
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return 'agora';
-    const diff = Math.max(0, Date.now() - date.getTime());
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 1) return 'agora';
-    if (minutes < 60) return `ha ${minutes} min`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `ha ${hours} h`;
-    return `ha ${Math.floor(hours / 24)} d`;
-}
 
 function setFilter(filter) {
     currentFilter = filter;
@@ -67,7 +25,7 @@ function navigate(tab) {
         window.pixelPollingInterval = null;
     }
     currentTab = tab;
-    ['dashboard', 'builder', 'flow', 'design', 'leads', 'integrate', 'ai'].forEach(t => {
+    ['dashboard', 'builder', 'flow', 'design', 'leads', 'integrate'].forEach(t => {
         const el = document.getElementById(`nav-${t}`);
         if(el) {
             el.classList.remove('bg-emerald-50', 'text-[#10b981]');
@@ -86,8 +44,7 @@ function navigate(tab) {
         'builder': 'Projetos & Funis',
         'flow': 'Automação Visual',
         'design': 'Campanhas',
-        'integrate': 'Integração Universal',
-        'ai': 'AI Studio'
+        'integrate': 'Integração Universal'
     };
     if(document.getElementById('header-title')) {
         document.getElementById('header-title').innerText = titleMap[tab] || 'SaaS';
@@ -108,7 +65,6 @@ async function render() {
     if (currentTab === 'flow') renderFlow();
     if (currentTab === 'design') renderDesign();
     if (currentTab === 'integrate') renderIntegrate();
-    if (currentTab === 'ai') await renderAIStudio();
 }
 
 // Skeletons Templates
@@ -174,8 +130,6 @@ async function renderDashboard() {
     const completos = rawLeads.filter(l => l.status === 'Completo').length;
     const pageViews = events.filter(e => e.event_name === 'page_view').length;
     const conversion = pageViews > 0 ? ((leadsCriados / pageViews) * 100).toFixed(1) : 0;
-    hydrateNotificationsFromData(rawLeads, events, conversion);
-    updateNotificationBadge();
 
     let aiSuggestions = `
         <div class="bg-gradient-to-br from-[#10b981]/10 to-emerald-50 p-6 rounded-xl border border-emerald-100">
@@ -186,7 +140,7 @@ async function renderDashboard() {
                     <div>
                         <p class="text-sm font-semibold text-gray-800">Queda na conversão</p>
                         <p class="text-xs text-gray-600 mt-1">A taxa de conversão caiu 12% nas últimas 48h. Sugerimos testar uma nova Headline focada em urgência no passo 1.</p>
-                        <button onclick="queueAISuggestion('Melhorar taxa de conversão do funil principal com headline de urgência')" class="mt-2 text-[11px] font-semibold text-[#10b981] hover:underline">Gerar plano assistido</button>
+                        <button class="mt-2 text-[11px] font-semibold text-[#10b981] hover:underline">Aplicar sugestão automática</button>
                     </div>
                 </li>
                 <li class="flex gap-3">
@@ -201,50 +155,34 @@ async function renderDashboard() {
                     <div>
                         <p class="text-sm font-semibold text-gray-800">Otimização de Copy</p>
                         <p class="text-xs text-gray-600 mt-1">Nossa IA analisou os textos e identificou oportunidades de persuasão baseadas no perfil predominante de leads.</p>
-                        <button onclick="navigate('ai')" class="mt-2 text-[11px] font-semibold text-[#10b981] hover:underline">Abrir AI Studio</button>
                     </div>
                 </li>
             </ul>
         </div>
     `;
 
-    const metricCards = {
-        visits: { icon: 'ph-eye', color: 'text-gray-400', value: pageViews, label: 'Visitas Únicas' },
-        leads: { icon: 'ph-user-plus', color: 'text-[#10b981]', value: leadsCriados, label: 'Leads Adquiridos' },
-        conversion: { icon: 'ph-chart-line-up', color: 'text-blue-500', value: `${conversion}%`, label: 'Taxa de Conversão' },
-        completed: { icon: 'ph-check-circle', color: 'text-purple-500', value: completos, label: 'Jornadas Completas' }
-    };
-    const metricOrder = getDashboardWidgetOrder();
     let metricsHtml = `
-        <div class="flex flex-wrap justify-between items-center gap-3 mb-4 fade-in">
-            <div>
-                <h2 class="text-sm font-bold text-gray-900">Layout de widgets</h2>
-                <p class="text-xs text-gray-500">Reordene os indicadores e salve sua visão operacional.</p>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="resetDashboardLayout()" class="px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 hover:bg-gray-50 transition">Resetar</button>
-                <button onclick="showToast('Layout salvo neste navegador.', 'success')" class="px-3 py-2 bg-gray-900 text-white rounded-lg text-xs font-semibold hover:bg-gray-800 transition">Salvar layout</button>
-            </div>
-        </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in">
-            ${metricOrder.map((key, index) => {
-                const card = metricCards[key];
-                return `
-                    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors group">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <div class="${card.color} mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ${card.icon} text-xl"></i></div>
-                                <div class="text-2xl font-bold text-gray-900">${card.value}</div>
-                                <div class="text-xs text-gray-500 mt-1 font-medium">${card.label}</div>
-                            </div>
-                            <div class="flex gap-1 opacity-70 group-hover:opacity-100 transition">
-                                <button onclick="moveDashboardWidget(${index}, -1)" class="h-7 w-7 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50" title="Mover para esquerda"><i class="ph ph-caret-left text-xs"></i></button>
-                                <button onclick="moveDashboardWidget(${index}, 1)" class="h-7 w-7 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-50" title="Mover para direita"><i class="ph ph-caret-right text-xs"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-gray-400 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-eye text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${pageViews}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Visitas Únicas</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-[#10b981] mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-user-plus text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${leadsCriados}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Leads Adquiridos</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-blue-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-chart-line-up text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${conversion}%</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Taxa de Conversão</div>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 hover:border-emerald-200 transition-colors cursor-pointer group">
+                <div class="text-purple-500 mb-2 group-hover:scale-110 transition-transform origin-left"><i class="ph ph-check-circle text-xl"></i></div>
+                <div class="text-2xl font-bold text-gray-900">${completos}</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">Jornadas Completas</div>
+            </div>
         </div>
     `;
 
@@ -259,11 +197,11 @@ async function renderDashboard() {
                     <div class="p-4 sm:px-6 hover:bg-gray-50 transition-colors flex items-center justify-between">
                         <div class="flex items-center gap-3">
                             <div class="h-10 w-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-sm border border-emerald-100">
-                                ${escapeHtml((l.name || l.email || '?')[0].toUpperCase())}
+                                ${(l.name || l.email || '?')[0].toUpperCase()}
                             </div>
                             <div>
-                                <p class="text-sm font-semibold text-gray-900">${escapeHtml(l.name || 'Anônimo')}</p>
-                                <p class="text-xs text-gray-500">${escapeHtml(l.email || l.phone || l.whatsapp || 'Contato oculto')}</p>
+                                <p class="text-sm font-semibold text-gray-900">${l.name || 'Anônimo'}</p>
+                                <p class="text-xs text-gray-500">${l.email || l.phone || l.whatsapp || 'Contato oculto'}</p>
                             </div>
                         </div>
                         <div class="text-right">
@@ -626,247 +564,6 @@ function renderDesign() {
     appContent.innerHTML = '<div class="glass-panel p-8 text-center text-gray-500 rounded-xl">Configurações de Design centralizadas! Acesse o <b>Construtor</b> e clique na área livre do canvas para acessar o Painel Global de Design!</div>';
 }
 
-async function buildSystemSnapshot() {
-    let leads = [];
-    let events = [];
-    try {
-        leads = await window.Leads.getLeads() || [];
-        events = await window.Leads.getEvents() || [];
-    } catch(e) {
-        console.warn('AI snapshot fallback', e);
-    }
-    const pageViews = events.filter(e => e.event_name === 'page_view').length;
-    const leadsCount = leads.length;
-    const completed = leads.filter(l => l.status === 'Completo').length;
-    const conversion = pageViews > 0 ? Number(((leadsCount / pageViews) * 100).toFixed(1)) : 0;
-    const lastEvent = [...events].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-    return {
-        pageViews,
-        leadsCount,
-        completed,
-        conversion,
-        lastEventName: lastEvent?.event_name || 'nenhum',
-        lastEventAt: lastEvent?.created_at || null,
-        funnelId: localStorage.getItem('integrate_funnel_id') || 'quiz_bolis_8f72a9',
-        publicKey: localStorage.getItem('integrate_public_key') || 'pk_live_7x92ksla0293'
-    };
-}
-
-function getAIRequests() {
-    return readLocalJSON(AI_REQUESTS_KEY, []);
-}
-
-function saveAIRequests(requests) {
-    writeLocalJSON(AI_REQUESTS_KEY, requests);
-}
-
-function generateAIPlan(command, snapshot) {
-    const lower = command.toLowerCase();
-    const actions = [];
-    const risks = [];
-
-    if (lower.includes('convers') || lower.includes('copy') || lower.includes('headline')) {
-        actions.push({
-            type: 'copy_optimization',
-            title: 'Otimizar primeira dobra do funil',
-            description: 'Criar uma headline mais direta, reforçar prova e reduzir atrito no primeiro clique.'
-        });
-    }
-    if (lower.includes('telefone') || lower.includes('whatsapp') || lower.includes('campo')) {
-        actions.push({
-            type: 'enable_phone_capture',
-            title: 'Ativar captura de telefone/WhatsApp',
-            description: 'Registrar a preferencia para adicionar telefone como campo obrigatorio nos proximos formularios de cadastro.'
-        });
-    }
-    if (lower.includes('pixel') || lower.includes('rastrei') || lower.includes('evento')) {
-        actions.push({
-            type: 'pixel_audit',
-            title: 'Executar auditoria do Pixel Universal',
-            description: 'Revalidar script, endpoint, ultimo evento e checklist de instalacao.'
-        });
-    }
-    if (actions.length === 0) {
-        actions.push({
-            type: 'guided_task',
-            title: 'Gerar plano assistido',
-            description: 'Transformar o pedido em etapas pequenas, revisaveis e aprovadas antes de aplicar.'
-        });
-    }
-
-    if (snapshot.conversion < 5 && snapshot.pageViews > 20) {
-        risks.push('Conversao abaixo de 5% com volume suficiente para investigar copy, oferta e formularios.');
-    }
-    if (!snapshot.lastEventAt) {
-        risks.push('Nenhum evento recente encontrado. A IA recomenda validar o pixel antes de otimizar campanha.');
-    }
-    risks.push('Mudancas automaticas ficam em modo assistido: nada sensivel e aplicado sem aprovacao.');
-
-    return { actions, risks };
-}
-
-async function renderAIStudio(prefill = '') {
-    const snapshot = await buildSystemSnapshot();
-    const requests = getAIRequests();
-    appContent.innerHTML = `
-        <div class="fade-in max-w-6xl mx-auto space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-6">
-                <section class="bg-white border border-gray-100 shadow-sm rounded-xl p-6">
-                    <div class="flex items-start justify-between gap-4 mb-5">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2"><i class="ph ph-sparkle text-[#10b981]"></i> AI Studio</h2>
-                            <p class="text-sm text-gray-500 mt-1">Nucleo de evolucao assistida para analisar, propor e aplicar mudancas aprovadas.</p>
-                        </div>
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                            Modo seguro
-                        </span>
-                    </div>
-
-                    <label for="ai-command" class="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Comando em linguagem natural</label>
-                    <textarea id="ai-command" rows="5" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-[#10b981] focus:ring-4 focus:ring-emerald-50 transition resize-none" placeholder="Ex: Melhore a taxa de conversao do funil principal e sugira ajustes no pixel.">${escapeHtml(prefill)}</textarea>
-                    <div class="flex flex-wrap gap-2 mt-4">
-                        <button onclick="runAIStudioCommand()" class="px-4 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center gap-2"><i class="ph ph-lightning"></i> Analisar e propor</button>
-                        <button onclick="document.getElementById('ai-command').value='Adicione um novo campo de telefone no formulario de cadastro e valide a jornada.'" class="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Campo telefone</button>
-                        <button onclick="document.getElementById('ai-command').value='Teste o Pixel Universal e explique por que os eventos nao aparecem.'" class="px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 transition">Diagnosticar pixel</button>
-                    </div>
-                    <div id="ai-output" class="mt-5"></div>
-                </section>
-
-                <aside class="space-y-4">
-                    <div class="bg-gray-900 text-white rounded-xl p-5 shadow-sm">
-                        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="ph ph-database"></i> Contexto lido</h3>
-                        <dl class="grid grid-cols-2 gap-3 text-sm">
-                            <div class="bg-white/10 rounded-lg p-3"><dt class="text-white/60 text-xs">Visitas</dt><dd class="font-bold text-lg">${snapshot.pageViews}</dd></div>
-                            <div class="bg-white/10 rounded-lg p-3"><dt class="text-white/60 text-xs">Leads</dt><dd class="font-bold text-lg">${snapshot.leadsCount}</dd></div>
-                            <div class="bg-white/10 rounded-lg p-3"><dt class="text-white/60 text-xs">Conversao</dt><dd class="font-bold text-lg">${snapshot.conversion}%</dd></div>
-                            <div class="bg-white/10 rounded-lg p-3"><dt class="text-white/60 text-xs">Ultimo evento</dt><dd class="font-bold text-sm truncate">${escapeHtml(snapshot.lastEventName)}</dd></div>
-                        </dl>
-                    </div>
-
-                    <div class="bg-white border border-gray-100 rounded-xl p-5 shadow-sm">
-                        <h3 class="font-bold text-gray-900 mb-3">Fila de aprovacao</h3>
-                        <div id="ai-queue">${renderAIQueueHtml(requests)}</div>
-                    </div>
-                </aside>
-            </div>
-        </div>
-    `;
-}
-
-function renderAIQueueHtml(requests) {
-    const list = requests.slice().reverse();
-    if (!list.length) {
-        return '<div class="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 rounded-xl">Nenhuma proposta aguardando aprovacao.</div>';
-    }
-    return list.map(item => `
-        <div class="border border-gray-100 rounded-xl p-4 mb-3 bg-gray-50/70">
-            <div class="flex items-start justify-between gap-3">
-                <div>
-                    <p class="text-sm font-bold text-gray-900">${escapeHtml(item.title)}</p>
-                    <p class="text-xs text-gray-500 mt-1">${escapeHtml(item.description)}</p>
-                    <p class="text-[10px] text-gray-400 mt-2">${relativeTime(item.createdAt)} • ${escapeHtml(item.status)}</p>
-                </div>
-                <span class="text-[10px] px-2 py-1 rounded-full ${item.status === 'aprovado' ? 'bg-green-100 text-green-700' : item.status === 'rejeitado' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${escapeHtml(item.status)}</span>
-            </div>
-            ${item.status === 'pendente' ? `
-                <div class="flex gap-2 mt-3">
-                    <button onclick="approveAIRequest('${item.id}')" class="flex-1 px-3 py-2 bg-[#10b981] text-white rounded-lg text-xs font-bold hover:bg-[#059669] transition">Aprovar</button>
-                    <button onclick="rejectAIRequest('${item.id}')" class="px-3 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg text-xs font-bold hover:bg-gray-50 transition">Rejeitar</button>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-window.queueAISuggestion = function(command) {
-    navigate('ai');
-    setTimeout(() => {
-        const input = document.getElementById('ai-command');
-        if (input) input.value = command;
-        runAIStudioCommand();
-    }, 80);
-};
-
-window.runAIStudioCommand = async function() {
-    const input = document.getElementById('ai-command');
-    const output = document.getElementById('ai-output');
-    const command = input?.value.trim();
-    if (!command) {
-        showToast('Digite um comando para a IA analisar.', 'error');
-        return;
-    }
-    const snapshot = await buildSystemSnapshot();
-    const plan = generateAIPlan(command, snapshot);
-    const requests = getAIRequests();
-    const now = new Date().toISOString();
-    const newRequests = plan.actions.map(action => ({
-        id: 'ai_' + Math.random().toString(36).slice(2, 10),
-        command,
-        ...action,
-        status: 'pendente',
-        createdAt: now
-    }));
-    saveAIRequests([...requests, ...newRequests].slice(-20));
-    hydrateNotificationsFromData([], [], snapshot.conversion, 'Nova proposta da IA aguardando aprovacao.');
-    updateNotificationBadge();
-
-    output.innerHTML = `
-        <div class="border border-emerald-100 bg-emerald-50 rounded-xl p-4 fade-in">
-            <h3 class="font-bold text-gray-900 mb-2">Plano proposto</h3>
-            <div class="space-y-2">
-                ${plan.actions.map(action => `
-                    <div class="bg-white border border-emerald-100 rounded-lg p-3">
-                        <p class="text-sm font-bold text-gray-900">${escapeHtml(action.title)}</p>
-                        <p class="text-xs text-gray-600 mt-1">${escapeHtml(action.description)}</p>
-                    </div>
-                `).join('')}
-            </div>
-            <h4 class="font-bold text-xs text-gray-500 uppercase tracking-widest mt-4 mb-2">Validacoes e seguranca</h4>
-            <ul class="space-y-1 text-xs text-gray-600 list-disc pl-4">
-                ${plan.risks.map(risk => `<li>${escapeHtml(risk)}</li>`).join('')}
-            </ul>
-        </div>
-    `;
-    const queue = document.getElementById('ai-queue');
-    if (queue) queue.innerHTML = renderAIQueueHtml(getAIRequests());
-    showToast('Plano criado e enviado para aprovacao.', 'success');
-};
-
-window.approveAIRequest = function(id) {
-    const requests = getAIRequests();
-    const idx = requests.findIndex(item => item.id === id);
-    if (idx === -1) return;
-    const request = requests[idx];
-
-    if (request.type === 'enable_phone_capture') {
-        localStorage.setItem('auth_extra_phone_enabled', 'true');
-    }
-    if (request.type === 'copy_optimization') {
-        localStorage.setItem('ai_latest_copy_recommendation', 'Headline recomendada: Transforme seus dados em uma maquina de conversao em menos de 7 dias.');
-    }
-    if (request.type === 'pixel_audit') {
-        localStorage.setItem('ai_pixel_audit_requested_at', new Date().toISOString());
-    }
-
-    requests[idx] = { ...request, status: 'aprovado', appliedAt: new Date().toISOString() };
-    saveAIRequests(requests);
-    const queue = document.getElementById('ai-queue');
-    if (queue) queue.innerHTML = renderAIQueueHtml(requests);
-    showToast('Mudanca aprovada e aplicada no modo assistido.', 'success');
-};
-
-window.rejectAIRequest = function(id) {
-    const requests = getAIRequests();
-    const idx = requests.findIndex(item => item.id === id);
-    if (idx === -1) return;
-    requests[idx] = { ...requests[idx], status: 'rejeitado' };
-    saveAIRequests(requests);
-    const queue = document.getElementById('ai-queue');
-    if (queue) queue.innerHTML = renderAIQueueHtml(requests);
-    showToast('Proposta rejeitada.', 'success');
-};
-
 async function generateNewIntegration() {
     const funnel_id = 'quiz_' + Math.random().toString(36).substring(2, 10);
     const public_key = 'pk_live_' + Math.random().toString(36).substring(2, 16);
@@ -874,8 +571,8 @@ async function generateNewIntegration() {
     localStorage.setItem('integrate_public_key', public_key);
     
     try {
-        if(window.supabaseClient) {
-            await window.supabaseClient.from('funnels').upsert({
+        if(window.supabase) {
+            await window.supabase.from('funnels').upsert({
                 funnel_id: funnel_id,
                 public_key: public_key,
                 name: funnel_id,
@@ -912,8 +609,8 @@ async function renderIntegrate() {
     let quizUrl = '';
 
     try {
-        if (window.supabaseClient) {
-            const { data: fData } = await window.supabaseClient.from('funnels').select('quiz_url, last_page_url').eq('funnel_id', funnel_id).maybeSingle();
+        if (window.supabase) {
+            const { data: fData } = await window.supabase.from('funnels').select('quiz_url, last_page_url').eq('funnel_id', funnel_id).maybeSingle();
             if (fData) quizUrl = fData.quiz_url || fData.last_page_url || '';
         }
     } catch(e) {}
@@ -1098,7 +795,7 @@ async function renderIntegrate() {
     `;
 
     // Injeta funções pra UI no escopo global deste container
-    window.showIntegrationFeedback = function(msg, type = 'success') {
+    window.showToast = function(msg, type = 'success') {
         const color = type === 'success' ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200';
         const container = document.getElementById('integration-feedback-container');
         if (!container) return;
@@ -1109,19 +806,18 @@ async function renderIntegrate() {
     window.copyInstallCode = function(type) {
         if(type === 'default') navigator.clipboard.writeText(tagSource);
         else navigator.clipboard.writeText(tagSourceSupa);
-        window.showIntegrationFeedback('Código copiado limpo.', 'success');
+        window.showToast('Código copiado limpo!', 'success');
     };
 
     window.publishQuiz = async function() {
         const urlInput = document.getElementById('int-quiz-url');
         if(!urlInput || !urlInput.value) {
-            window.showIntegrationFeedback('Insira uma URL válida ou instale o pixel e abra seu quiz uma vez.', 'error');
+            window.showToast('Insira uma URL válida ou instale o pixel e abra seu quiz uma vez.', 'error');
             return;
         }
-        window.showIntegrationFeedback('<div class="flex items-center gap-2"><div class="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full"></div> Publicando...</div>', 'success');
+        window.showToast('<div class="flex items-center gap-2"><div class="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full"></div> Publicando...</div>', 'success');
         try {
-            if (!window.supabaseClient) throw new Error('Supabase nao configurado.');
-            await window.supabaseClient.from('funnels').upsert({
+            await window.supabase.from('funnels').upsert({
                 funnel_id: "${funnel_id}",
                 public_key: "${public_key}",
                 quiz_url: urlInput.value,
@@ -1129,9 +825,9 @@ async function renderIntegrate() {
                 published_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             }, { onConflict: 'funnel_id' });
-            window.showIntegrationFeedback('Quiz publicado com sucesso.', 'success');
+            window.showToast('✅ Quiz publicado com sucesso.', 'success');
         } catch(e) {
-            window.showIntegrationFeedback('Erro ao publicar quiz.', 'error');
+            window.showToast('❌ Erro ao publicar quiz.', 'error');
         }
     };
 
@@ -1140,12 +836,12 @@ async function renderIntegrate() {
         if(urlInput && urlInput.value) {
             window.open(urlInput.value, '_blank');
         } else {
-            window.showIntegrationFeedback('Instale o pixel no quiz e abra a página do quiz uma vez para capturar a URL.', 'error');
+            window.showToast('Instale o pixel no quiz e abra a página do quiz uma vez para capturar a URL.', 'error');
         }
     };
 
     window.testIntegration = async function() {
-        window.showIntegrationFeedback('<div class="flex items-center gap-2"><div class="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full"></div> Testando integração...</div>', 'success');
+        window.showToast('<div class="flex items-center gap-2"><div class="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full"></div> Testando integração...</div>', 'success');
 
         const payload = {
             funnel_id: "${funnel_id}",
@@ -1177,7 +873,7 @@ async function renderIntegrate() {
                 throw new Error(`Status: ${req.status}. ${errDetails}`);
             }
 
-            window.showIntegrationFeedback('Integração funcionando corretamente. Evento de teste recebido.', 'success');
+            window.showToast('✅ Integração funcionando corretamente. Evento de teste recebido.', 'success');
 
             // Atualiza Interface (Status card)
             const lastEventEl = document.getElementById('int-last-event');
@@ -1195,7 +891,7 @@ async function renderIntegrate() {
             if(dbDiagEl) dbDiagEl.innerHTML = '<span class="text-green-600 font-medium">OK (Salvo)</span>';
 
         } catch (e) {
-            window.showIntegrationFeedback(`Não foi possível testar a integração. Verifique /api/track, Supabase e variáveis de ambiente da Vercel. Detalhes: ${escapeHtml(e.message)}`, 'error');
+            window.showToast(`❌ Não foi possível testar a integração. Verifique /api/track, Supabase e variáveis de ambiente da Vercel. Detalhes: ${e.message}`, 'error');
         }
     };
 
@@ -1274,17 +970,21 @@ function publish() {
 }
 
 // Iniciar app
-document.addEventListener('DOMContentLoaded', async () => {
-    const session = await window.AuthManager?.requireAuth?.();
-    if (!session) return;
+document.addEventListener('DOMContentLoaded', () => {
     if (window.BuilderApp) window.BuilderApp.init();
-    applyProfileToHeader();
-    seedNotifications();
-    updateNotificationBadge();
+    // Verifica Supabase Config
     if (!localStorage.getItem('SUPABASE_URL')) {
-        showToast('Rodando em modo local. Configure o Supabase para dados em tempo real na nuvem.', 'success');
+        appContent.innerHTML = `
+            <div class="p-8 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl max-w-2xl mx-auto mt-10 text-center">
+                <i class="ph ph-warning-circle text-4xl mb-3 block"></i>
+                <h2 class="font-bold text-lg mb-2">Supabase Não Configurado</h2>
+                <p class="mb-4 text-sm">O Dashboard precisa se conectar ao Supabase para puxar os leads e métricas reais. Você precisa adicionar sua URL e ANON KEY nas Configurações.</p>
+                <button onclick="openSettings()" class="bg-yellow-500 hover:bg-yellow-600 shadow text-white px-4 py-2 rounded font-medium">Configurar Supabase Agora</button>
+            </div>
+        `;
+    } else {
+        render();
     }
-    render();
 });
 
 // Global UI Systems
@@ -1489,539 +1189,3 @@ window.saveProfileSettings = function() {
     closeProfileModal();
     showToast('Alterações salvas com sucesso no banco de dados.', 'success');
 }
-
-// Overrides evoluidos: UI nativa, perfil persistente, notificacoes e layout.
-function getDashboardWidgetOrder() {
-    const allowed = ['visits', 'leads', 'conversion', 'completed'];
-    const stored = readLocalJSON(DASHBOARD_LAYOUT_KEY, allowed);
-    const clean = stored.filter(item => allowed.includes(item));
-    allowed.forEach(item => {
-        if (!clean.includes(item)) clean.push(item);
-    });
-    return clean;
-}
-
-window.moveDashboardWidget = function(index, direction) {
-    const order = getDashboardWidgetOrder();
-    const target = index + direction;
-    if (target < 0 || target >= order.length) return;
-    const temp = order[index];
-    order[index] = order[target];
-    order[target] = temp;
-    writeLocalJSON(DASHBOARD_LAYOUT_KEY, order);
-    renderDashboard();
-};
-
-window.resetDashboardLayout = function() {
-    localStorage.removeItem(DASHBOARD_LAYOUT_KEY);
-    renderDashboard();
-};
-
-function getNotifications() {
-    return readLocalJSON(NOTIFICATIONS_KEY, []);
-}
-
-function saveNotifications(items) {
-    writeLocalJSON(NOTIFICATIONS_KEY, items.slice(0, 30));
-}
-
-function pushNotification(notification) {
-    const items = getNotifications();
-    const exists = items.some(item => item.fingerprint === notification.fingerprint);
-    if (exists) return;
-    items.unshift({
-        id: 'ntf_' + Math.random().toString(36).slice(2, 10),
-        read: false,
-        createdAt: new Date().toISOString(),
-        ...notification
-    });
-    saveNotifications(items);
-}
-
-function seedNotifications() {
-    if (getNotifications().length > 0) return;
-    pushNotification({
-        fingerprint: 'welcome-ai',
-        type: 'ai',
-        icon: 'ph-sparkle',
-        title: 'IA Contextual pronta',
-        message: 'O AI Studio pode analisar funis, pixel e copy antes de aplicar mudancas aprovadas.'
-    });
-    pushNotification({
-        fingerprint: 'pixel-watch',
-        type: 'pixel',
-        icon: 'ph-broadcast',
-        title: 'Monitor do Pixel ativo',
-        message: 'A central atualiza o status do pixel por polling eficiente quando a aba de integracao esta aberta.'
-    });
-}
-
-function hydrateNotificationsFromData(leads = [], events = [], conversion = 0, extraMessage = '') {
-    if (extraMessage) {
-        pushNotification({
-            fingerprint: `ai-${Date.now()}`,
-            type: 'ai',
-            icon: 'ph-sparkle',
-            title: 'Aprovacao pendente',
-            message: extraMessage
-        });
-    }
-
-    const latestLead = [...leads].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-    if (latestLead?.lead_id) {
-        pushNotification({
-            fingerprint: `lead-${latestLead.lead_id}`,
-            type: 'sale',
-            icon: 'ph-user-plus',
-            title: 'Novo lead capturado',
-            message: `${latestLead.name || latestLead.email || 'Lead anonimo'} entrou no funil.`
-        });
-    }
-
-    const lastPixelEvent = [...events].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
-    if (lastPixelEvent?.created_at) {
-        const isOld = Date.now() - new Date(lastPixelEvent.created_at).getTime() > 60 * 60 * 1000;
-        if (isOld) {
-            pushNotification({
-                fingerprint: `pixel-old-${new Date(lastPixelEvent.created_at).toDateString()}`,
-                type: 'warning',
-                icon: 'ph-warning-circle',
-                title: 'Pixel sem eventos recentes',
-                message: 'Nao recebemos eventos na ultima hora. Rode o diagnostico de integracao.'
-            });
-        }
-    }
-
-    if (Number(conversion) > 0 && Number(conversion) < 5) {
-        pushNotification({
-            fingerprint: `conversion-low-${new Date().toDateString()}`,
-            type: 'ai',
-            icon: 'ph-chart-line-down',
-            title: 'Conversao abaixo do ideal',
-            message: 'A IA recomenda revisar promessa, formulario e primeiro CTA.'
-        });
-    }
-}
-
-function notificationTone(type) {
-    const tones = {
-        sale: 'bg-emerald-100 text-emerald-600',
-        warning: 'bg-yellow-100 text-yellow-700',
-        pixel: 'bg-blue-100 text-blue-600',
-        ai: 'bg-violet-100 text-violet-600'
-    };
-    return tones[type] || 'bg-gray-100 text-gray-600';
-}
-
-function updateNotificationBadge() {
-    const unread = getNotifications().filter(item => !item.read).length;
-    const count = document.getElementById('notif-count');
-    const pulse = document.getElementById('notif-pulse');
-    if (count) {
-        count.textContent = unread > 9 ? '9+' : unread;
-        count.classList.toggle('hidden', unread === 0);
-    }
-    if (pulse) pulse.classList.toggle('hidden', unread === 0);
-}
-
-window.renderNotificationDropdown = function() {
-    const list = document.getElementById('notif-list');
-    if (!list) return;
-    const items = getNotifications();
-    if (!items.length) {
-        list.innerHTML = '<div class="p-6 text-center text-sm text-gray-400">Nenhuma notificacao por enquanto.</div>';
-        updateNotificationBadge();
-        return;
-    }
-    list.innerHTML = items.map(item => `
-        <button onclick="openNotification('${item.id}')" class="w-full text-left p-4 hover:bg-gray-50 transition flex gap-3 ${item.read ? 'opacity-75' : ''}">
-            <div class="mt-0.5 h-8 w-8 rounded-full ${notificationTone(item.type)} flex items-center justify-center flex-shrink-0">
-                <i class="ph ${escapeHtml(item.icon || 'ph-bell')} text-lg"></i>
-            </div>
-            <div class="min-w-0">
-                <p class="text-sm font-semibold text-gray-800 leading-tight mb-1">${escapeHtml(item.title)}</p>
-                <p class="text-xs text-gray-600">${escapeHtml(item.message)}</p>
-                <p class="text-[10px] text-gray-400 mt-1 font-medium">${relativeTime(item.createdAt)}</p>
-            </div>
-        </button>
-    `).join('');
-    updateNotificationBadge();
-};
-
-window.openNotification = function(id) {
-    const items = getNotifications();
-    const item = items.find(notification => notification.id === id);
-    if (!item) return;
-    item.read = true;
-    saveNotifications(items);
-    renderNotificationDropdown();
-    if (item.type === 'pixel') navigate('integrate');
-    if (item.type === 'ai') navigate('ai');
-};
-
-window.markNotificationsRead = function(event) {
-    if (event) event.stopPropagation();
-    saveNotifications(getNotifications().map(item => ({ ...item, read: true })));
-    renderNotificationDropdown();
-    showToast('Notificacoes marcadas como lidas.', 'success');
-};
-
-window.showToast = function(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if(!container) return;
-    const toast = document.createElement('div');
-    const isError = type === 'error';
-    toast.className = `transform transition-all duration-300 ease-out translate-y-10 opacity-0 bg-white border-l-4 ${isError ? 'border-red-500' : 'border-[#10b981]'} p-4 rounded-xl shadow-lg flex items-center gap-3 w-80 pointer-events-auto`;
-    toast.innerHTML = `
-        <div class="h-8 w-8 rounded-full ${isError ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-[#10b981]'} flex items-center justify-center flex-shrink-0">
-            <i class="ph ${isError ? 'ph-x' : 'ph-check-circle'} text-lg"></i>
-        </div>
-        <div class="flex-1">
-            <p class="text-sm font-semibold text-gray-800">${isError ? 'Atencao' : 'Sucesso'}</p>
-            <p class="text-xs text-gray-600">${escapeHtml(message)}</p>
-        </div>
-        <button class="text-gray-400 hover:text-gray-700" onclick="this.parentElement.remove()"><i class="ph ph-x"></i></button>
-    `;
-    container.appendChild(toast);
-    requestAnimationFrame(() => {
-        toast.classList.remove('translate-y-10', 'opacity-0');
-        toast.classList.add('translate-y-0', 'opacity-100');
-    });
-    setTimeout(() => {
-        toast.classList.remove('translate-y-0', 'opacity-100');
-        toast.classList.add('translate-y-2', 'opacity-0');
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
-};
-
-window.openConfirmDialog = function({ title, message, confirmText = 'Confirmar', cancelText = 'Cancelar', tone = 'danger', onConfirm }) {
-    const modal = document.getElementById('confirm-modal');
-    if (!modal) return;
-    const accept = document.getElementById('confirm-accept');
-    const cancel = document.getElementById('confirm-cancel');
-    document.getElementById('confirm-title').textContent = title || 'Confirmar acao';
-    document.getElementById('confirm-message').textContent = message || 'Revise antes de continuar.';
-    accept.textContent = confirmText;
-    cancel.textContent = cancelText;
-    accept.className = `px-4 py-2 text-white rounded-lg text-sm font-semibold transition ${tone === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#10b981] hover:bg-[#059669]'}`;
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    document.body.classList.add('modal-open');
-
-    const close = () => {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        document.body.classList.remove('modal-open');
-        accept.onclick = null;
-        cancel.onclick = null;
-    };
-    cancel.onclick = close;
-    accept.onclick = async () => {
-        accept.disabled = true;
-        try {
-            if (onConfirm) await onConfirm();
-        } finally {
-            accept.disabled = false;
-            close();
-        }
-    };
-};
-
-function applyAvatarBackground(element, profile) {
-    if (!element) return;
-    element.textContent = '';
-    element.style.backgroundImage = '';
-    element.style.backgroundSize = '';
-    element.style.backgroundPosition = '';
-    if (profile.avatarData) {
-        element.style.backgroundImage = `url(${profile.avatarData})`;
-        element.style.backgroundSize = `${profile.avatarZoom || 100}%`;
-        element.style.backgroundPosition = `${profile.avatarX || 50}% ${profile.avatarY || 50}%`;
-        element.classList.add('profile-avatar-preview');
-    } else {
-        element.textContent = getInitials(profile.displayName);
-    }
-}
-
-function applyProfileToHeader() {
-    const profile = window.AuthManager?.getProfile?.() || {};
-    applyAvatarBackground(document.getElementById('header-avatar'), profile);
-    applyAvatarBackground(document.getElementById('profile-menu-avatar'), profile);
-    const name = document.getElementById('profile-menu-name');
-    const role = document.getElementById('profile-menu-role');
-    if (name) name.textContent = profile.displayName || 'Usuario';
-    if (role) role.textContent = profile.role || 'Admin do Ecossistema';
-}
-
-window.openProfileModal = function(tab) {
-    document.getElementById('profile-dropdown')?.classList.add('hidden');
-    document.getElementById('profile-modal')?.classList.remove('hidden');
-    document.body.classList.add('modal-open');
-    switchProfileTab(tab || 'profile');
-};
-
-window.closeProfileModal = function() {
-    document.getElementById('profile-modal')?.classList.add('hidden');
-    document.body.classList.remove('modal-open');
-};
-
-window.switchProfileTab = function(tab) {
-    activeProfileTab = tab;
-    ['profile', 'security', 'devices', 'notifications'].forEach(t => {
-        const btn = document.getElementById(`ptab-${t}`);
-        if(btn) {
-            btn.className = 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 hover:bg-gray-100 border border-transparent';
-        }
-    });
-    const activeBtn = document.getElementById(`ptab-${tab}`);
-    if(activeBtn) {
-        activeBtn.className = 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors bg-white shadow-sm border border-gray-200 text-[#10b981]';
-    }
-
-    const content = document.getElementById('profile-modal-content');
-    const title = document.getElementById('profile-modal-title');
-    const profile = window.AuthManager.getProfile();
-    if (!content || !title) return;
-
-    if (tab === 'profile') {
-        title.textContent = 'Perfil Geral';
-        content.innerHTML = `
-            <div class="space-y-6 fade-in">
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-3">Foto de Perfil</label>
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-6">
-                        <div id="profile-avatar-preview" class="h-24 w-24 rounded-full bg-gradient-to-br from-[#10b981] to-emerald-700 flex items-center justify-center text-white font-bold text-3xl shadow-inner overflow-hidden">${escapeHtml(getInitials(profile.displayName))}</div>
-                        <div class="space-y-3 flex-1">
-                            <div class="flex flex-wrap gap-2">
-                                <label class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 flex items-center gap-2 transition cursor-pointer">
-                                    <i class="ph ph-upload-simple"></i> Fazer Upload
-                                    <input id="profile-photo-input" type="file" accept="image/*" class="hidden" onchange="handleProfileImageUpload(event)">
-                                </label>
-                                <button onclick="removeProfileImage()" class="px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 flex items-center gap-2 transition"><i class="ph ph-trash"></i> Remover</button>
-                            </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <label class="text-xs font-semibold text-gray-500">Zoom <input id="avatar-zoom" type="range" min="80" max="180" value="${profile.avatarZoom || 100}" oninput="previewAvatarCrop()" class="w-full"></label>
-                                <label class="text-xs font-semibold text-gray-500">Horizontal <input id="avatar-x" type="range" min="0" max="100" value="${profile.avatarX || 50}" oninput="previewAvatarCrop()" class="w-full"></label>
-                                <label class="text-xs font-semibold text-gray-500">Vertical <input id="avatar-y" type="range" min="0" max="100" value="${profile.avatarY || 50}" oninput="previewAvatarCrop()" class="w-full"></label>
-                            </div>
-                            <p class="text-xs text-gray-500">Upload com pre-visualizacao e corte visual salvo no perfil.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="border-t border-gray-100 pt-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Nome de Exibição</label>
-                        <input id="profile-display-name" type="text" value="${escapeHtml(profile.displayName)}" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-bold text-gray-700 mb-1">Papel no Sistema</label>
-                        <input type="text" value="${escapeHtml(profile.role)}" disabled class="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-2.5 text-gray-500 cursor-not-allowed">
-                    </div>
-                </div>
-            </div>
-        `;
-        applyAvatarBackground(document.getElementById('profile-avatar-preview'), profile);
-    } else if (tab === 'security') {
-        title.textContent = 'Segurança & Acesso';
-        content.innerHTML = `
-            <div class="space-y-6 fade-in">
-                <div>
-                    <h4 class="text-sm font-bold text-gray-700 mb-2">Atualizar E-mail</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
-                        <input id="profile-email" type="email" value="${escapeHtml(profile.email)}" class="border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                        <button onclick="sendProfileEmailCode()" class="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition">Enviar codigo</button>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mt-3">
-                        <input id="profile-email-code" type="text" inputmode="numeric" placeholder="Codigo recebido" class="border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                        <button onclick="confirmProfileEmailCode()" class="px-4 py-2.5 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg text-sm font-medium transition">Confirmar e-mail</button>
-                    </div>
-                    <p id="profile-email-help" class="text-xs text-gray-500 mt-2">Enviaremos um codigo de confirmacao para o novo endereco.</p>
-                </div>
-                <div class="border-t border-gray-100 pt-6">
-                    <h4 class="text-sm font-bold text-gray-700 mb-4">Alterar Senha</h4>
-                    <div class="space-y-4">
-                        <input id="current-password" type="password" placeholder="Senha Atual" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                        <input id="new-password" type="password" placeholder="Nova Senha" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                        <input id="confirm-password" type="password" placeholder="Confirmar Nova Senha" class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-gray-900 focus:ring-2 focus:ring-[#10b981] focus:border-[#10b981] outline-none transition shadow-sm">
-                    </div>
-                    <p class="text-xs text-gray-500 mt-2">Use 8+ caracteres com letra maiuscula e numero.</p>
-                </div>
-            </div>
-        `;
-    } else if (tab === 'devices') {
-        title.textContent = 'Dispositivos Conectados';
-        const devices = window.AuthManager.getDevices();
-        content.innerHTML = `
-            <div class="space-y-4 fade-in">
-                <p class="text-sm text-gray-600 mb-6">Gerencie sessoes ativas por dispositivo, localizacao e ultimo acesso.</p>
-                ${devices.map(device => `
-                    <div class="border ${device.current ? 'border-emerald-200 bg-emerald-50/50' : 'border-gray-200 bg-white'} rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
-                        <div class="flex items-center gap-4">
-                            <div class="h-10 w-10 bg-white rounded-lg border border-gray-200 flex items-center justify-center ${device.current ? 'text-[#10b981]' : 'text-gray-600'}"><i class="ph ${device.type === 'mobile' ? 'ph-device-mobile' : 'ph-laptop'} text-xl"></i></div>
-                            <div>
-                                <p class="text-sm font-bold text-gray-900">${escapeHtml(device.name)} ${device.current ? '(Este dispositivo)' : ''}</p>
-                                <p class="text-xs ${device.current ? 'text-[#10b981]' : 'text-gray-500'} font-medium">${escapeHtml(device.location)} • ${device.current ? 'Ativo agora' : relativeTime(device.lastAccess)}</p>
-                            </div>
-                        </div>
-                        ${device.current ? '' : `<button onclick="disconnectProfileDevice('${device.id}')" class="text-sm font-medium text-red-600 hover:text-red-700 px-3 py-1.5 rounded bg-red-50">Desconectar</button>`}
-                    </div>
-                `).join('') || '<div class="text-sm text-gray-400 text-center py-6">Nenhum dispositivo ativo.</div>'}
-                <div class="pt-4 text-center">
-                    <button onclick="disconnectOtherProfileDevices()" class="text-sm font-medium text-red-600 hover:text-red-700 hover:underline">Desconectar todas as outras sessoes</button>
-                </div>
-            </div>
-        `;
-    } else if (tab === 'notifications') {
-        title.textContent = 'Configurações de Notificação';
-        const prefs = window.AuthManager.getNotificationPrefs();
-        content.innerHTML = `
-            <div class="space-y-6 fade-in">
-                <p class="text-sm text-gray-600 mb-2">Controle tipos de alerta e canais de entrega.</p>
-                ${[
-                    ['sales', 'Alertas de Vendas e Leads', 'Receba um alerta sempre que um novo funil converter.'],
-                    ['pixel', 'Saúde do Pixel e Integração', 'Avisos urgentes se o rastreio for interrompido.'],
-                    ['ai', 'Sugestões de IA Contextual', 'Dicas e propostas para otimizar campanhas.']
-                ].map(([key, label, desc]) => `
-                    <div class="flex items-center justify-between border-t border-gray-100 pt-4">
-                        <div>
-                            <p class="text-sm font-bold text-gray-800">${label}</p>
-                            <p class="text-xs text-gray-500">${desc}</p>
-                        </div>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                          <input id="notif-${key}" type="checkbox" class="sr-only peer" ${prefs[key] ? 'checked' : ''}>
-                          <div class="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10b981]"></div>
-                        </label>
-                    </div>
-                `).join('')}
-                <div class="border-t border-gray-100 pt-4">
-                    <p class="text-sm font-bold text-gray-800 mb-3">Canais</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        ${[
-                            ['central', 'Central interna'],
-                            ['email', 'E-mail'],
-                            ['push', 'Push']
-                        ].map(([key, label]) => `
-                            <label class="flex items-center gap-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg px-3 py-2">
-                                <input id="channel-${key}" type="checkbox" ${prefs.channels[key] ? 'checked' : ''} class="rounded text-[#10b981]">
-                                ${label}
-                            </label>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-};
-
-window.handleProfileImageUpload = function(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-        showToast('Envie um arquivo de imagem valido.', 'error');
-        return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-        showToast('A imagem precisa ter ate 2MB.', 'error');
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-        const profile = window.AuthManager.saveProfile({ avatarData: reader.result });
-        applyAvatarBackground(document.getElementById('profile-avatar-preview'), profile);
-        previewAvatarCrop();
-    };
-    reader.readAsDataURL(file);
-};
-
-window.previewAvatarCrop = function() {
-    const preview = document.getElementById('profile-avatar-preview');
-    if (!preview) return;
-    const profile = window.AuthManager.getProfile();
-    const zoom = Number(document.getElementById('avatar-zoom')?.value || profile.avatarZoom || 100);
-    const x = Number(document.getElementById('avatar-x')?.value || profile.avatarX || 50);
-    const y = Number(document.getElementById('avatar-y')?.value || profile.avatarY || 50);
-    const next = window.AuthManager.saveProfile({ avatarZoom: zoom, avatarX: x, avatarY: y });
-    applyAvatarBackground(preview, next);
-};
-
-window.removeProfileImage = function() {
-    const profile = window.AuthManager.saveProfile({ avatarData: '', avatarZoom: 100, avatarX: 50, avatarY: 50 });
-    applyAvatarBackground(document.getElementById('profile-avatar-preview'), profile);
-};
-
-window.sendProfileEmailCode = function() {
-    const email = document.getElementById('profile-email')?.value;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '')) {
-        showToast('Informe um e-mail valido.', 'error');
-        return;
-    }
-    const code = window.AuthManager.startEmailUpdate(email);
-    const help = document.getElementById('profile-email-help');
-    if (help) help.textContent = `Modo demo: codigo ${code}. Em Supabase Auth, confirme pelo e-mail enviado.`;
-    showToast('Codigo de confirmacao enviado.', 'success');
-};
-
-window.confirmProfileEmailCode = async function() {
-    try {
-        const email = await window.AuthManager.confirmEmailUpdate(document.getElementById('profile-email-code')?.value.trim());
-        showToast(`E-mail atualizado para ${email}.`, 'success');
-        applyProfileToHeader();
-    } catch(error) {
-        showToast(error.message || 'Nao foi possivel confirmar o e-mail.', 'error');
-    }
-};
-
-window.disconnectProfileDevice = function(deviceId) {
-    window.AuthManager.disconnectDevice(deviceId);
-    switchProfileTab('devices');
-    showToast('Sessao desconectada.', 'success');
-};
-
-window.disconnectOtherProfileDevices = function() {
-    window.AuthManager.disconnectOtherDevices();
-    switchProfileTab('devices');
-    showToast('Outras sessoes encerradas.', 'success');
-};
-
-window.saveProfileSettings = async function() {
-    try {
-        if (activeProfileTab === 'profile') {
-            const displayName = document.getElementById('profile-display-name')?.value.trim();
-            if (!displayName || displayName.length < 3) {
-                showToast('Use um nome com pelo menos 3 caracteres.', 'error');
-                return;
-            }
-            window.AuthManager.saveProfile({ displayName });
-            applyProfileToHeader();
-        }
-
-        if (activeProfileTab === 'security') {
-            const currentPassword = document.getElementById('current-password')?.value || '';
-            const newPassword = document.getElementById('new-password')?.value || '';
-            const confirmPassword = document.getElementById('confirm-password')?.value || '';
-            if (newPassword || confirmPassword || currentPassword) {
-                if (newPassword !== confirmPassword) throw new Error('A confirmacao de senha nao confere.');
-                if (!window.AuthManager.validatePassword(newPassword)) throw new Error('A nova senha precisa ter 8 caracteres, uma maiuscula e um numero.');
-                await window.AuthManager.updatePassword(currentPassword, newPassword);
-            }
-        }
-
-        if (activeProfileTab === 'notifications') {
-            window.AuthManager.saveNotificationPrefs({
-                sales: document.getElementById('notif-sales')?.checked,
-                pixel: document.getElementById('notif-pixel')?.checked,
-                ai: document.getElementById('notif-ai')?.checked,
-                channels: {
-                    central: document.getElementById('channel-central')?.checked,
-                    email: document.getElementById('channel-email')?.checked,
-                    push: document.getElementById('channel-push')?.checked
-                }
-            });
-        }
-
-        closeProfileModal();
-        showToast('Alteracoes salvas com sucesso.', 'success');
-    } catch(error) {
-        showToast(error.message || 'Nao foi possivel salvar.', 'error');
-    }
-};
