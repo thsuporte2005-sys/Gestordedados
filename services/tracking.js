@@ -140,3 +140,18 @@ window.Tracking = {
     trackFunnelCompleted,
     trackCheckoutClick
 };
+
+// Carrega a tela nova de Pixel depois do dashboard principal.
+function loadPixelIntegrationPanel() {
+    if (document.querySelector('script[src="pixel-integration.js"]')) return;
+    const script = document.createElement('script');
+    script.src = 'pixel-integration.js';
+    script.defer = true;
+    document.body.appendChild(script);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadPixelIntegrationPanel);
+} else {
+    loadPixelIntegrationPanel();
+}

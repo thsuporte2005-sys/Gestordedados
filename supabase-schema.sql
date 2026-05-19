@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS funnels (
   public_key text NOT NULL,
   status text DEFAULT 'active',
   domain_allowed text,
+  quiz_url text,
+  last_page_url text,
+  last_domain text,
+  last_event_name text,
+  last_heartbeat_at timestamptz,
+  published boolean DEFAULT false,
+  published_at timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   last_event_at timestamptz
@@ -17,8 +24,11 @@ CREATE TABLE IF NOT EXISTS funnels (
 CREATE TABLE IF NOT EXISTS tracking_events (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   funnel_id text REFERENCES funnels(funnel_id),
+  public_key text,
   lead_id text NOT NULL,
+  session_id text,
   event_name text NOT NULL,
+  event_value text,
   step_number numeric,
   question text,
   answer text,
@@ -66,6 +76,64 @@ CREATE TABLE IF NOT EXISTS leads (
   completed_at timestamptz
 );
 
+CREATE INDEX IF NOT EXISTS idx_tracking_events_funnel_created_at ON tracking_events(funnel_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tracking_events_funnel_event_created_at ON tracking_events(funnel_id, event_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_funnel_created_at ON leads(funnel_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_funnels_last_heartbeat_at ON funnels(last_heartbeat_at DESC);
+
+-- Pixel Universal multi-quiz
+CREATE TABLE IF NOT EXISTS quiz_pixels (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid,
+  quiz_id text NOT NULL UNIQUE,
+  quiz_name text,
+  pixel_id text NOT NULL UNIQUE,
+  public_key text NOT NULL,
+  domain text,
+  integrated_url text,
+  status text DEFAULT 'aguardando_instalacao',
+  last_event_name text,
+  last_event_at timestamptz,
+  last_heartbeat_at timestamptz,
+  events_today int DEFAULT 0,
+  leads_today int DEFAULT 0,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS pixel_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pixel_id text NOT NULL REFERENCES quiz_pixels(pixel_id) ON DELETE CASCADE,
+  quiz_id text NOT NULL,
+  event_name text NOT NULL,
+  event_type text,
+  page_url text,
+  domain text,
+  session_id text,
+  visitor_id text,
+  payload jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS pixel_diagnostics (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pixel_id text NOT NULL REFERENCES quiz_pixels(pixel_id) ON DELETE CASCADE,
+  quiz_id text NOT NULL,
+  script_ok boolean DEFAULT false,
+  endpoint_ok boolean DEFAULT false,
+  database_ok boolean DEFAULT false,
+  domain_ok boolean DEFAULT false,
+  last_error text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quiz_pixels_pixel_id ON quiz_pixels(pixel_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_pixels_quiz_id ON quiz_pixels(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_quiz_pixels_status ON quiz_pixels(status);
+CREATE INDEX IF NOT EXISTS idx_pixel_events_pixel_created_at ON pixel_events(pixel_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pixel_events_pixel_event_created_at ON pixel_events(pixel_id, event_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pixel_diagnostics_pixel_created_at ON pixel_diagnostics(pixel_id, created_at DESC);
+
 -- Tabela de Respostas
 CREATE TABLE IF NOT EXISTS lead_answers (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -77,11 +145,55 @@ CREATE TABLE IF NOT EXISTS lead_answers (
   created_at timestamptz DEFAULT now()
 );
 
+-- Perfil, sessoes e preferências do painel SaaS
+CREATE TABLE IF NOT EXISTS profiles (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid UNIQUE,
+  display_name text NOT NULL DEFAULT 'Tiago Silva',
+  role text NOT NULL DEFAULT 'Admin do Ecossistema',
+  avatar_url text,
+  avatar_data text,
+  email text,
+  notification_preferences jsonb DEFAULT '{"sales":true,"pixel":true,"ai":true,"channels":{"push":true,"email":true,"central":true}}',
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS user_sessions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid,
+  session_id text UNIQUE NOT NULL,
+  device_name text,
+  device_type text,
+  location text,
+  user_agent text,
+  last_access timestamptz DEFAULT now(),
+  revoked_at timestamptz
+);
+
+CREATE TABLE IF NOT EXISTS ai_evolution_requests (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid,
+  command text NOT NULL,
+  action_type text,
+  title text,
+  description text,
+  status text DEFAULT 'pendente',
+  applied_at timestamptz,
+  created_at timestamptz DEFAULT now()
+);
+
 -- Regras de RLS Básicas (Simples para Integração JS Pura)
 ALTER TABLE funnels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracking_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lead_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE quiz_pixels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pixel_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pixel_diagnostics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_evolution_requests ENABLE ROW LEVEL SECURITY;
 
 -- Políticas Públicas de Insert (Somente Insert, Sem Select para Segurança)
 CREATE POLICY "Public insert events" ON tracking_events FOR INSERT TO public WITH CHECK (true);
@@ -95,3 +207,6 @@ CREATE POLICY "Admin select events" ON tracking_events FOR SELECT USING (true);
 CREATE POLICY "Admin select leads" ON leads FOR SELECT USING (true);
 CREATE POLICY "Admin select answers" ON lead_answers FOR SELECT USING (true);
 CREATE POLICY "Admin manage funnels" ON funnels FOR ALL USING (true);
+CREATE POLICY "Admin manage profiles" ON profiles FOR ALL USING (true);
+CREATE POLICY "Admin manage sessions" ON user_sessions FOR ALL USING (true);
+CREATE POLICY "Admin manage ai evolution" ON ai_evolution_requests FOR ALL USING (true);
