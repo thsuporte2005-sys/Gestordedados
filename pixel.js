@@ -5,6 +5,8 @@
 
     // 1. Setup & Config
     const STORAGE_QUEUE = 'gestor_pixel_queue';
+    const MAX_QUEUE_SIZE = 80;
+    const DEFAULT_HEARTBEAT_INTERVAL = 30000;
     let scriptTag = document.currentScript;
     if (!scriptTag) {
         const scripts = document.getElementsByTagName('script');
@@ -13,15 +15,22 @@
         }
     }
 
+    const pixelId = scriptTag?.getAttribute('data-pixel-id') || scriptTag?.getAttribute('data-funnel-id') || 'unknown';
+    const quizId = scriptTag?.getAttribute('data-quiz-id') || scriptTag?.getAttribute('data-funnel-id') || pixelId;
+    const configuredHeartbeat = Number(scriptTag?.getAttribute('data-heartbeat-interval') || DEFAULT_HEARTBEAT_INTERVAL);
+
     const config = {
-        funnelId: scriptTag?.getAttribute('data-funnel-id') || 'unknown',
+        pixelId: pixelId,
+        quizId: quizId,
+        funnelId: pixelId,
         publicKey: scriptTag?.getAttribute('data-public-key') || '',
         endpoint: scriptTag?.getAttribute('data-endpoint') || '/api/track',
+        heartbeatInterval: Number.isFinite(configuredHeartbeat) ? Math.max(15000, configuredHeartbeat) : DEFAULT_HEARTBEAT_INTERVAL,
         supabaseUrl: scriptTag?.getAttribute('data-supabase-url') || '',
         supabaseKey: scriptTag?.getAttribute('data-supabase-key') || ''
     };
 
-    if (config.funnelId === 'unknown') console.warn('[GestorPixel] Aviso: funnel_id não encontrado no script.');
+    if (config.pixelId === 'unknown') console.warn('[GestorPixel] Aviso: Pixel ID não encontrado no script.');
 
     // 2. Identificadores & Estado Local
     function getLeadId() {
@@ -99,6 +108,7 @@
         try {
             let pending = JSON.parse(localStorage.getItem(STORAGE_QUEUE) || '[]');
             pending.push(payload);
+            if (pending.length > MAX_QUEUE_SIZE) pending = pending.slice(pending.length - MAX_QUEUE_SIZE);
             localStorage.setItem(STORAGE_QUEUE, JSON.stringify(pending));
         } catch(e) {}
     }
@@ -127,12 +137,21 @@
             const headers = { 'Content-Type': 'application/json' };
             if (config.publicKey) headers['Authorization'] = `Bearer ${config.publicKey}`;
             
-            const response = await fetch(config.endpoint, {
-                method: 'POST',
-                keepalive: true,
-                headers: headers,
-                body: JSON.stringify(payload)
-            });
+            const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const timeout = controller ? setTimeout(() => controller.abort(), 7000) : null;
+
+            let response;
+            try {
+                response = await fetch(config.endpoint, {
+                    method: 'POST',
+                    keepalive: true,
+                    headers: headers,
+                    signal: controller ? controller.signal : undefined,
+                    body: JSON.stringify(payload)
+                });
+            } finally {
+                if (timeout) clearTimeout(timeout);
+            }
             if (!response.ok) throw new Error('Proxy API Error');
             return;
         }
@@ -176,11 +195,15 @@
         }
 
         const payload = {
-            funnel_id: config.funnelId,
+            pixel_id: config.pixelId,
+            quiz_id: config.quizId,
+            funnel_id: config.pixelId,
             public_key: config.publicKey,
             lead_id: getLeadId(),
+            visitor_id: getLeadId(),
             session_id: getSessionId(),
             event_name: eventName,
+            event_type: customData.event_type || eventName,
             event_data: customData,
             ...getVisitorData()
         };
@@ -226,6 +249,32 @@
         return CHECKOUT_DOMAINS.some(d => url.includes(d));
     }
 
+    function isExternalUrl(url) {
+        try {
+            const target = new URL(url, window.location.href);
+            return target.hostname && target.hostname !== window.location.hostname;
+        } catch(e) {
+            return false;
+        }
+    }
+
+    function getContactFieldType(input) {
+        const hint = [
+            input.name,
+            input.id,
+            input.placeholder,
+            input.getAttribute('aria-label'),
+            input.getAttribute('autocomplete'),
+            input.type
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        if (hint.includes('email')) return 'email';
+        if (hint.includes('whatsapp') || hint.includes('zap')) return 'whatsapp';
+        if (hint.includes('phone') || hint.includes('telefone') || hint.includes('celular') || hint.includes('tel')) return 'phone';
+        if (hint.includes('name') || hint.includes('nome')) return 'name';
+        return null;
+    }
+
     // 6. Listeners Globais Interativos (Sem onclick manual!)
     document.addEventListener('click', (e) => {
         try {
@@ -239,7 +288,7 @@
                 // Trato Click em Âncora / Link
                 if (interactiveEl.tagName === 'A') {
                     const href = interactiveEl.getAttribute('href') || interactiveEl.href;
-                    if (dataTrack === 'checkout-click' || isCheckoutUrl(href)) {
+                    if (dataTrack === 'checkout-click' || isCheckoutUrl(href) || isExternalUrl(href)) {
                         track('checkout_click', { link_url: href, button_text: interactiveEl.innerText.trim() });
                     } else if (href && !href.startsWith('#')) {
                         track('link_click', { link_url: href, button_text: interactiveEl.innerText.trim() });
@@ -301,6 +350,20 @@
         } catch(e) {}
     });
 
+    document.addEventListener('change', (e) => {
+        try {
+            const input = e.target;
+            if (!input || !input.matches || !input.matches('input, textarea')) return;
+            const fieldType = getContactFieldType(input);
+            const value = String(input.value || '').trim();
+            if (!fieldType || !value) return;
+
+            const leadData = {};
+            leadData[fieldType === 'whatsapp' ? 'phone' : fieldType] = value;
+            track('lead_created', leadData);
+        } catch(e) {}
+    }, true);
+
     // 8. Auto Reconhecimento de Conclusão / Oferta
     function setupCompletionObserver() {
         const TRIGGER_WORDS = ['felicidades', 'análisis está listo', 'tu análisis', 'oferta', 'método', 'comprar', 'quiero asegurar', 'checkout', 'vsl', 'resultado final', 'seu perfil'];
@@ -354,7 +417,27 @@
     }
 
     // --- Startups Automáticos ---
+    let heartbeatTimer = null;
+    function sendHeartbeat() {
+        track('pixel_heartbeat', {
+            heartbeat_interval: config.heartbeatInterval,
+            visibility_state: document.visibilityState || 'visible'
+        });
+    }
+
+    function startHeartbeat() {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        sendHeartbeat();
+        heartbeatTimer = setInterval(sendHeartbeat, config.heartbeatInterval);
+    }
+
     window.addEventListener('online', flushQueue);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            flushQueue();
+            sendHeartbeat();
+        }
+    });
     
     // Bootstrap DOM
     function init() {
@@ -362,6 +445,7 @@
         setTimeout(() => {
             track('page_view');
         }, 300);
+        startHeartbeat();
         setupCompletionObserver();
     }
 
